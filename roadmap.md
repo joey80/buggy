@@ -1,0 +1,6 @@
+- create package.json
+- add typescript
+- add bundler/compiler
+- add semver
+- add tests
+- update readme
