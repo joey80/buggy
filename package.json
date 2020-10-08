@@ -1,17 +1,23 @@
 {
   "name": "buggy",
-  "version": "0.0.1",
+  "version": "0.0.0-development",
   "description": "Add bugs to your page",
   "main": "src/index.ts",
   "scripts": {
     "start": "parcel serve src/index.html",
     "build": "cross-env NODE_ENV=production parcel build src/index.html --public-url .",
     "watch": "parcel watch src/index.html",
-    "test": "test"
+    "test": "test",
+    "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joey80/Bug.git"
+    "url": "https://github.com/joey80/buggy.git"
+  },
+  "release": {
+    "branches": [
+      "release"
+    ]
   },
   "keywords": [
     "bugs"
@@ -19,11 +25,12 @@
   "author": "Joey Leger",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/joey80/Bug/issues"
+    "url": "https://github.com/joey80/buggy/issues"
   },
-  "homepage": "https://github.com/joey80/Bug#readme",
+  "homepage": "https://github.com/joey80/buggy#readme",
   "devDependencies": {
     "parcel-bundler": "^1.12.4",
+    "semantic-release": "^17.1.2",
     "typescript": "^4.0.3"
   }
 }
