@@ -117,20 +117,97 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"index.ts":[function(require,module,exports) {
+})({"images/fly.png":[function(require,module,exports) {
+module.exports = "/fly.4fa9170e.png";
+},{}],"images/spider.png":[function(require,module,exports) {
+module.exports = "/spider.10b05fe0.png";
+},{}],"images/*.png":[function(require,module,exports) {
+module.exports = {
+  "fly": require("./fly.png"),
+  "spider": require("./spider.png")
+};
+},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"objects/Bug.ts":[function(require,module,exports) {
 "use strict";
 
-var hello = function hello() {
-  return 'Hello World!';
-}; // main
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-var main = document.getElementById('js-main');
+var __png_1 = __importDefault(require("../images/*.png"));
 
-if (main) {
-  main.textContent = hello();
-}
-},{}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+var Bug =
+/** @class */
+function () {
+  function Bug(_a) {
+    var _b = _a.height,
+        height = _b === void 0 ? 20 : _b,
+        _c = _a.maxSpeed,
+        maxSpeed = _c === void 0 ? 13 : _c,
+        _d = _a.minSpeed,
+        minSpeed = _d === void 0 ? 6 : _d,
+        _e = _a.sprite,
+        sprite = _e === void 0 ? '' : _e,
+        _f = _a.width,
+        width = _f === void 0 ? 20 : _f;
+    this.height = height;
+    this.isActive = false;
+    this.isAlive = false;
+    this.maxSpeed = maxSpeed;
+    this.minSpeed = minSpeed;
+    this.sprite = sprite;
+    this.width = width;
+  }
+
+  Bug.prototype.spawn = function () {
+    var bug = document.createElement('img');
+    bug.className = 'bug';
+    bug.src = __png_1.default[this.sprite];
+    var styles = {
+      height: this.height + "px",
+      left: 0,
+      objectFit: 'none',
+      objectPosition: '0 0',
+      position: 'fixed',
+      top: 0,
+      width: this.width + "px",
+      zIndex: '9999999'
+    };
+    Object.assign(bug.style, styles);
+    document.body.appendChild(bug);
+  };
+
+  return Bug;
+}();
+
+exports.default = Bug;
+},{"../images/*.png":"images/*.png"}],"index.ts":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Bug_1 = __importDefault(require("./objects/Bug"));
+
+var Spider = new Bug_1.default({
+  height: 90,
+  width: 69,
+  sprite: 'spider'
+});
+Spider.spawn();
+},{"./objects/Bug":"objects/Bug.ts"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -158,7 +235,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64870" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49561" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

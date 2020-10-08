@@ -1,8 +1,9 @@
-const hello = () => {
-  return 'Hello World!'
-}
-// main
-const main = document.getElementById('js-main')
-if (main) {
-  main.textContent = hello()
-}
+import Bug from './objects/Bug';
+
+const Spider = new Bug({
+  height: 90,
+  width: 69,
+  sprite: 'spider',
+});
+
+Spider.spawn();
