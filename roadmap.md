@@ -1,6 +1,7 @@
-- create package.json
-- add typescript
-- add bundler/compiler
-- add semver
+- DONE create package.json
+- DONE add typescript
+- DONE add bundler/compiler
+- DONE add semver
+- refactor
 - add tests
 - update readme
