@@ -1,0 +1,22 @@
+{
+  "name": "buggy",
+  "version": "0.0.1",
+  "description": "Add bugs to your page",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joey80/Bug.git"
+  },
+  "keywords": [
+    "bugs"
+  ],
+  "author": "Joey Leger",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joey80/Bug/issues"
+  },
+  "homepage": "https://github.com/joey80/Bug#readme"
+}
