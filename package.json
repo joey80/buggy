@@ -2,8 +2,11 @@
   "name": "buggy",
   "version": "0.0.1",
   "description": "Add bugs to your page",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
+    "start": "parcel serve src/index.html",
+    "build": "cross-env NODE_ENV=production parcel build src/index.html --public-url .",
+    "watch": "parcel watch src/index.html",
     "test": "test"
   },
   "repository": {
@@ -18,5 +21,9 @@
   "bugs": {
     "url": "https://github.com/joey80/Bug/issues"
   },
-  "homepage": "https://github.com/joey80/Bug#readme"
+  "homepage": "https://github.com/joey80/Bug#readme",
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^4.0.3"
+  }
 }
