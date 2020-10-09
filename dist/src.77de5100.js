@@ -126,7 +126,7 @@ module.exports = {
   "fly": require("./fly.png"),
   "spider": require("./spider.png")
 };
-},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"objects/Bug.ts":[function(require,module,exports) {
+},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"classes/Bug.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -145,16 +145,20 @@ var Bug =
 /** @class */
 function () {
   function Bug(_a) {
-    var _b = _a.height,
-        height = _b === void 0 ? 20 : _b,
-        _c = _a.maxSpeed,
-        maxSpeed = _c === void 0 ? 13 : _c,
-        _d = _a.minSpeed,
-        minSpeed = _d === void 0 ? 6 : _d,
-        _e = _a.sprite,
-        sprite = _e === void 0 ? '' : _e,
-        _f = _a.width,
-        width = _f === void 0 ? 20 : _f;
+    var _b = _a.frames,
+        frames = _b === void 0 ? 0 : _b,
+        _c = _a.height,
+        height = _c === void 0 ? 20 : _c,
+        _d = _a.maxSpeed,
+        maxSpeed = _d === void 0 ? 13 : _d,
+        _e = _a.minSpeed,
+        minSpeed = _e === void 0 ? 6 : _e,
+        _f = _a.sprite,
+        sprite = _f === void 0 ? '' : _f,
+        _g = _a.width,
+        width = _g === void 0 ? 20 : _g;
+    this.bug = document.createElement('img');
+    this.frames = frames;
     this.height = height;
     this.isActive = false;
     this.isAlive = false;
@@ -164,7 +168,7 @@ function () {
     this.width = width;
   }
 
-  Bug.prototype.spawn = function () {
+  Bug.prototype.create = function () {
     var bug = document.createElement('img');
     bug.className = 'bug';
     bug.src = __png_1.default[this.sprite];
@@ -180,6 +184,30 @@ function () {
     };
     Object.assign(bug.style, styles);
     document.body.appendChild(bug);
+    this.bug = bug;
+  };
+
+  Bug.prototype.walk = function () {
+    var _this = this;
+
+    var walkCycle = function walkCycle(frame) {
+      if (frame === _this.frames - 1) {
+        frame = 0;
+      }
+
+      _this.bug.style.objectPosition = "-" + (_this.width + _this.width * frame) + "px 0";
+      frame++;
+      setTimeout(function () {
+        return walkCycle(frame);
+      }, 100);
+    };
+
+    walkCycle(0);
+  };
+
+  Bug.prototype.init = function () {
+    this.create();
+    this.walk();
   };
 
   return Bug;
@@ -199,15 +227,16 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var Bug_1 = __importDefault(require("./objects/Bug"));
+var Bug_1 = __importDefault(require("./classes/Bug"));
 
 var Spider = new Bug_1.default({
+  frames: 7,
   height: 90,
   width: 69,
   sprite: 'spider'
 });
-Spider.spawn();
-},{"./objects/Bug":"objects/Bug.ts"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+Spider.init();
+},{"./classes/Bug":"classes/Bug.ts"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -235,7 +264,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49561" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60080" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
