@@ -117,16 +117,43 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"images/fly.png":[function(require,module,exports) {
-module.exports = "/fly.4fa9170e.png";
-},{}],"images/spider.png":[function(require,module,exports) {
+})({"images/spider.png":[function(require,module,exports) {
 module.exports = "/spider.10b05fe0.png";
+},{}],"images/fly.png":[function(require,module,exports) {
+module.exports = "/fly.4fa9170e.png";
 },{}],"images/*.png":[function(require,module,exports) {
 module.exports = {
-  "fly": require("./fly.png"),
-  "spider": require("./spider.png")
+  "spider": require("./spider.png"),
+  "fly": require("./fly.png")
 };
-},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"classes/Bug.ts":[function(require,module,exports) {
+},{"./spider.png":"images/spider.png","./fly.png":"images/fly.png"}],"utils/index.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isNearEdge = void 0;
+
+var isNearEdge = function isNearEdge(bug) {
+  var clientHeight = document.documentElement.clientHeight;
+  var clientWidth = document.documentElement.clientWidth;
+  var _a = bug.getClientRects()[0],
+      top = _a.top,
+      right = _a.right,
+      bottom = _a.bottom,
+      left = _a.left,
+      width = _a.width,
+      height = _a.height;
+  var pos = [];
+  if (top <= height) pos.push('top');
+  if (bottom >= clientHeight - height) pos.push('bottom');
+  if (left <= width) pos.push('left');
+  if (right >= clientWidth - width) pos.push('right');
+  return pos.join('_');
+};
+
+exports.isNearEdge = isNearEdge;
+},{}],"classes/Bug.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -140,6 +167,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var __png_1 = __importDefault(require("../images/*.png"));
+
+var utils_1 = require("../utils");
 
 var Bug =
 /** @class */
@@ -169,9 +198,8 @@ function () {
   }
 
   Bug.prototype.create = function () {
-    var bug = document.createElement('img');
-    bug.className = 'bug';
-    bug.src = __png_1.default[this.sprite];
+    this.bug.className = 'bug';
+    this.bug.src = __png_1.default[this.sprite];
     var styles = {
       height: this.height + "px",
       left: 0,
@@ -182,9 +210,18 @@ function () {
       width: this.width + "px",
       zIndex: '9999999'
     };
-    Object.assign(bug.style, styles);
-    document.body.appendChild(bug);
-    this.bug = bug;
+    Object.assign(this.bug.style, styles);
+    document.body.appendChild(this.bug);
+  };
+
+  Bug.prototype.move = function () {
+    var bugIsOnTheEdge = utils_1.isNearEdge(this.bug);
+    if (bugIsOnTheEdge) this.rotate();
+  };
+
+  Bug.prototype.rotate = function () {
+    var newAngle = Math.floor(Math.random() * Math.PI * 2 * 100);
+    this.bug.style.transform = "rotate(" + newAngle + "deg)";
   };
 
   Bug.prototype.walk = function () {
@@ -208,13 +245,14 @@ function () {
   Bug.prototype.init = function () {
     this.create();
     this.walk();
+    this.move();
   };
 
   return Bug;
 }();
 
 exports.default = Bug;
-},{"../images/*.png":"images/*.png"}],"index.ts":[function(require,module,exports) {
+},{"../images/*.png":"images/*.png","../utils":"utils/index.ts"}],"index.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -264,7 +302,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60080" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50222" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

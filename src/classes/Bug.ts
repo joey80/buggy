@@ -1,4 +1,5 @@
 import images from '../images/*.png';
+import { isNearEdge } from '../utils';
 
 class Bug {
   bug: HTMLImageElement;
@@ -24,9 +25,8 @@ class Bug {
   }
 
   create() {
-    const bug = document.createElement('img');
-    bug.className = 'bug';
-    bug.src = images[this.sprite];
+    this.bug.className = 'bug';
+    this.bug.src = images[this.sprite];
     const styles = {
       height: `${this.height}px`,
       left: 0,
@@ -37,9 +37,18 @@ class Bug {
       width: `${this.width}px`,
       zIndex: '9999999',
     };
-    Object.assign(bug.style, styles);
-    document.body.appendChild(bug);
-    this.bug = bug;
+    Object.assign(this.bug.style, styles);
+    document.body.appendChild(this.bug);
+  }
+
+  move() {
+    const bugIsOnTheEdge = isNearEdge(this.bug);
+    if (bugIsOnTheEdge) this.rotate();
+  }
+
+  rotate() {
+    const newAngle = Math.floor(Math.random() * Math.PI * 2 * 100);
+    this.bug.style.transform = `rotate(${newAngle}deg)`;
   }
 
   walk() {
@@ -57,6 +66,7 @@ class Bug {
   init() {
     this.create();
     this.walk();
+    this.move();
   }
 }
 
