@@ -117,16 +117,16 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"images/spider.png":[function(require,module,exports) {
-module.exports = "/spider.10b05fe0.png";
-},{}],"images/fly.png":[function(require,module,exports) {
+})({"images/fly.png":[function(require,module,exports) {
 module.exports = "/fly.4fa9170e.png";
+},{}],"images/spider.png":[function(require,module,exports) {
+module.exports = "/spider.10b05fe0.png";
 },{}],"images/*.png":[function(require,module,exports) {
 module.exports = {
-  "spider": require("./spider.png"),
-  "fly": require("./fly.png")
+  "fly": require("./fly.png"),
+  "spider": require("./spider.png")
 };
-},{"./spider.png":"images/spider.png","./fly.png":"images/fly.png"}],"utils/index.ts":[function(require,module,exports) {
+},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"utils/index.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -148,7 +148,8 @@ var isNearEdge = function isNearEdge(bug) {
   if (top <= height) pos.push('top');
   if (bottom >= clientHeight - height) pos.push('bottom');
   if (left <= width) pos.push('left');
-  if (right >= clientWidth - width) pos.push('right');
+  if (right >= clientWidth - width) pos.push('right'); // TODO: shouldnt join if its only one thing
+
   return pos.join('_');
 };
 
@@ -197,10 +198,28 @@ function () {
     this.width = width;
   }
 
-  Bug.prototype.create = function () {
+  Bug.prototype.appendBugToDOM = function () {
+    document.body.appendChild(this.bug);
+  };
+
+  Bug.prototype.assignBugClassName = function () {
     this.bug.className = 'bug';
+  };
+
+  Bug.prototype.checkIfOnLastFrame = function (frame) {
+    if (frame === this.frames - 1) {
+      return 0;
+    }
+
+    return frame;
+  };
+
+  Bug.prototype.createBugImage = function () {
     this.bug.src = __png_1.default[this.sprite];
-    var styles = {
+  };
+
+  Bug.prototype.createBugStyles = function () {
+    Object.assign(this.bug.style, {
       height: this.height + "px",
       left: 0,
       objectFit: 'none',
@@ -209,30 +228,44 @@ function () {
       top: 0,
       width: this.width + "px",
       zIndex: '9999999'
-    };
-    Object.assign(this.bug.style, styles);
-    document.body.appendChild(this.bug);
+    });
   };
 
   Bug.prototype.move = function () {
-    var bugIsOnTheEdge = utils_1.isNearEdge(this.bug);
-    if (bugIsOnTheEdge) this.rotate();
+    // TODO: add this to motion function
+    if (utils_1.isNearEdge(this.bug)) this.rotateBugToNewAngle();
   };
 
-  Bug.prototype.rotate = function () {
+  Bug.prototype.rotateBugToNewAngle = function () {
     var newAngle = Math.floor(Math.random() * Math.PI * 2 * 100);
     this.bug.style.transform = "rotate(" + newAngle + "deg)";
+  };
+
+  Bug.prototype.updateBugObjectPosition = function (frame) {
+    this.bug.style.objectPosition = "-" + (this.width + this.width * frame) + "px 0";
+  };
+
+  Bug.prototype.init = function () {
+    this.create();
+    this.walk();
+    this.move();
+  };
+
+  Bug.prototype.create = function () {
+    this.assignBugClassName();
+    this.createBugImage();
+    this.createBugStyles();
+    this.appendBugToDOM();
   };
 
   Bug.prototype.walk = function () {
     var _this = this;
 
     var walkCycle = function walkCycle(frame) {
-      if (frame === _this.frames - 1) {
-        frame = 0;
-      }
+      frame = _this.checkIfOnLastFrame(frame);
 
-      _this.bug.style.objectPosition = "-" + (_this.width + _this.width * frame) + "px 0";
+      _this.updateBugObjectPosition(frame);
+
       frame++;
       setTimeout(function () {
         return walkCycle(frame);
@@ -240,12 +273,6 @@ function () {
     };
 
     walkCycle(0);
-  };
-
-  Bug.prototype.init = function () {
-    this.create();
-    this.walk();
-    this.move();
   };
 
   return Bug;
@@ -302,7 +329,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50222" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56271" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

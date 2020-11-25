@@ -24,10 +24,27 @@ class Bug {
     this.width = width;
   }
 
-  create() {
+  appendBugToDOM() {
+    document.body.appendChild(this.bug);
+  }
+
+  assignBugClassName() {
     this.bug.className = 'bug';
+  }
+
+  checkIfOnLastFrame(frame: number) {
+    if (frame === this.frames - 1) {
+      return 0;
+    }
+    return frame;
+  }
+
+  createBugImage() {
     this.bug.src = images[this.sprite];
-    const styles = {
+  }
+
+  createBugStyles() {
+    Object.assign(this.bug.style, {
       height: `${this.height}px`,
       left: 0,
       objectFit: 'none',
@@ -36,37 +53,44 @@ class Bug {
       top: 0,
       width: `${this.width}px`,
       zIndex: '9999999',
-    };
-    Object.assign(this.bug.style, styles);
-    document.body.appendChild(this.bug);
+    });
   }
 
   move() {
-    const bugIsOnTheEdge = isNearEdge(this.bug);
-    if (bugIsOnTheEdge) this.rotate();
+    // TODO: add this to motion function
+    if (isNearEdge(this.bug)) this.rotateBugToNewAngle();
   }
 
-  rotate() {
+  rotateBugToNewAngle() {
     const newAngle = Math.floor(Math.random() * Math.PI * 2 * 100);
     this.bug.style.transform = `rotate(${newAngle}deg)`;
   }
 
-  walk() {
-    const walkCycle = (frame: number) => {
-      if (frame === this.frames - 1) {
-        frame = 0;
-      }
-      this.bug.style.objectPosition = `-${this.width + this.width * frame}px 0`;
-      frame++;
-      setTimeout(() => walkCycle(frame), 100);
-    };
-    walkCycle(0);
+  updateBugObjectPosition(frame: number) {
+    this.bug.style.objectPosition = `-${this.width + this.width * frame}px 0`;
   }
 
   init() {
     this.create();
     this.walk();
     this.move();
+  }
+
+  create() {
+    this.assignBugClassName();
+    this.createBugImage();
+    this.createBugStyles();
+    this.appendBugToDOM();
+  }
+
+  walk() {
+    const walkCycle = (frame: number) => {
+      frame = this.checkIfOnLastFrame(frame);
+      this.updateBugObjectPosition(frame);
+      frame++;
+      setTimeout(() => walkCycle(frame), 100);
+    };
+    walkCycle(0);
   }
 }
 
