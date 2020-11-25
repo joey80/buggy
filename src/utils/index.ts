@@ -9,6 +9,7 @@ const isNearEdge = (bug: HTMLElement) => {
   if (left <= width) pos.push('left');
   if (right >= clientWidth - width) pos.push('right');
 
+  // TODO: shouldnt join if its only one thing
   return pos.join('_');
 };
 
