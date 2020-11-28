@@ -3,5 +3,6 @@
 - DONE add bundler/compiler
 - DONE add semver
 - refactor
+- add eslint airb&b
 - add tests
 - update readme

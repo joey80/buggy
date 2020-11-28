@@ -185,9 +185,18 @@ function () {
         minSpeed = _e === void 0 ? 6 : _e,
         _f = _a.sprite,
         sprite = _f === void 0 ? '' : _f,
-        _g = _a.width,
-        width = _g === void 0 ? 20 : _g;
+        _g = _a.walkSpeed,
+        walkSpeed = _g === void 0 ? 100 : _g,
+        _h = _a.width,
+        width = _h === void 0 ? 20 : _h;
+
+    this.setStartTime = function (startTime, timestamp) {
+      if (startTime === 0) return timestamp;
+      return startTime;
+    };
+
     this.bug = document.createElement('img');
+    this.direction = [];
     this.frames = frames;
     this.height = height;
     this.isActive = false;
@@ -195,6 +204,7 @@ function () {
     this.maxSpeed = maxSpeed;
     this.minSpeed = minSpeed;
     this.sprite = sprite;
+    this.walkSpeed = walkSpeed;
     this.width = width;
   }
 
@@ -231,13 +241,45 @@ function () {
     });
   };
 
+  Bug.prototype.moveCycle = function () {
+    var _this = this;
+
+    var movement = function movement(step) {
+      // if (isNearEdge(this.bug)) this.rotateBugToNewAngle();
+      // if near edge rotate to opposite angle?
+      _this.bug.style.top = "" + _this.direction[1] + step + "px";
+      _this.bug.style.left = "" + _this.direction[0] + step + "px";
+      step++;
+      requestAnimationFrame(function () {
+        return movement(step);
+      });
+    };
+
+    requestAnimationFrame(function () {
+      return movement(0);
+    });
+  };
+
   Bug.prototype.move = function () {
+    // console.log('random', Math.floor(Math.random() * 360));
     // TODO: add this to motion function
-    if (utils_1.isNearEdge(this.bug)) this.rotateBugToNewAngle();
+    if (utils_1.isNearEdge(this.bug)) this.rotateBugToNewAngle(); // this.moveCycle();
   };
 
   Bug.prototype.rotateBugToNewAngle = function () {
-    var newAngle = Math.floor(Math.random() * Math.PI * 2 * 100);
+    var dirlookup = function dirlookup(num) {
+      if (num >= 0 && num <= 90) return ['+', '-'];
+      if (num >= 91 && num <= 180) return ['+', '+'];
+      if (num >= 181 && num <= 270) return ['-', '+'];
+      return ['-', '-'];
+    };
+
+    var newAngle = Math.floor(Math.random() * 360);
+    this.direction = dirlookup(newAngle);
+    console.log({
+      newAngle: newAngle,
+      dir: this.direction
+    });
     this.bug.style.transform = "rotate(" + newAngle + "deg)";
   };
 
@@ -261,18 +303,32 @@ function () {
   Bug.prototype.walk = function () {
     var _this = this;
 
-    var walkCycle = function walkCycle(frame) {
-      frame = _this.checkIfOnLastFrame(frame);
+    var startTime = 0;
 
-      _this.updateBugObjectPosition(frame);
-
-      frame++;
-      setTimeout(function () {
-        return walkCycle(frame);
-      }, 100);
+    var determineProgress = function determineProgress(startTime, timestamp) {
+      return (timestamp - startTime) / 1 / _this.walkSpeed;
     };
 
-    walkCycle(0);
+    var walkCycle = function walkCycle(timestamp, frame) {
+      startTime = _this.setStartTime(startTime, timestamp);
+      var progress = determineProgress(startTime, timestamp);
+      frame = _this.checkIfOnLastFrame(frame);
+
+      if (progress >= 1) {
+        _this.updateBugObjectPosition(frame);
+
+        frame++;
+        startTime = 0;
+      }
+
+      requestAnimationFrame(function (timestamp) {
+        return walkCycle(timestamp, frame);
+      });
+    };
+
+    requestAnimationFrame(function (timestamp) {
+      return walkCycle(timestamp, 0);
+    });
   };
 
   return Bug;
