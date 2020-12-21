@@ -126,34 +126,132 @@ module.exports = {
   "fly": require("./fly.png"),
   "spider": require("./spider.png")
 };
-},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"utils/index.ts":[function(require,module,exports) {
+},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"utils/RandomObjectMover.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.isNearEdge = void 0;
 
-var isNearEdge = function isNearEdge(bug) {
-  var clientHeight = document.documentElement.clientHeight;
-  var clientWidth = document.documentElement.clientWidth;
-  var _a = bug.getClientRects()[0],
-      top = _a.top,
-      right = _a.right,
-      bottom = _a.bottom,
-      left = _a.left,
-      width = _a.width,
-      height = _a.height;
-  var pos = [];
-  if (top <= height) pos.push('top');
-  if (bottom >= clientHeight - height) pos.push('bottom');
-  if (left <= width) pos.push('left');
-  if (right >= clientWidth - width) pos.push('right'); // TODO: shouldnt join if its only one thing
+var RandomObjectMover =
+/** @class */
+function () {
+  function RandomObjectMover(obj, speed) {
+    if (speed === void 0) {
+      speed = 250;
+    }
 
-  return pos.join('_');
-};
+    this.boundEvent = function () {};
 
-exports.isNearEdge = isNearEdge;
+    this.currentPosition = {
+      x: 0,
+      y: 0
+    };
+    this.isRunning = false;
+    this.nextPosition = {
+      x: 0,
+      y: 0
+    };
+    this.object = obj;
+    this.pixelsPerSecond = speed;
+  }
+
+  RandomObjectMover.prototype.calcDelta = function (a, b) {
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    return dist;
+  };
+
+  RandomObjectMover.prototype.generateNewPosition = function () {
+    // Get container dimensions minus div size
+    var containerSize = this.getContainerDimensions();
+    var availableHeight = containerSize.height - this.object.clientHeight;
+    var availableWidth = containerSize.width - this.object.clientWidth; // Pick a random place in the space
+
+    var x = Math.floor(Math.random() * availableWidth);
+    var y = Math.floor(Math.random() * availableHeight);
+    console.log('newPos', {
+      oldPos: this.currentPosition,
+      newPos: {
+        x: x,
+        y: y
+      }
+    });
+    return {
+      x: x,
+      y: y
+    };
+  }; // TODO: needs a better name
+  // window
+
+
+  RandomObjectMover.prototype.getContainerDimensions = function () {
+    return {
+      height: document.documentElement.clientHeight,
+      width: document.documentElement.clientWidth
+    };
+  }; // TODO: Rotate a parent div of the bug??
+
+
+  RandomObjectMover.prototype.moveOnce = function () {
+    // Pick a new spot on the page
+    var next = this.generateNewPosition(); // How far do we have to move?
+
+    var delta = this.calcDelta(this.currentPosition, next); // Speed of this transition, rounded to 2DP
+
+    var speed = Math.round(delta / this.pixelsPerSecond * 100) / 100;
+    this.object.style.transition = "transform " + speed + "s linear";
+    this.object.style.transform = "translate3d(" + next.x + "px, " + next.y + "px, 0)"; // this.object.style.transform = `rotate(${degree}deg)`;
+    // Save this new position ready for the next call.
+
+    this.currentPosition = next;
+    this.isRunning = true;
+  }; // TODO: give this a better name
+
+
+  RandomObjectMover.prototype.rotate = function () {
+    var _a = this.object.getClientRects()[0],
+        top = _a.top,
+        left = _a.left,
+        width = _a.width,
+        height = _a.height;
+    var centerX = left + width / 2;
+    var centerY = top + height / 2;
+    var radians = Math.atan2(this.nextPosition.x - centerX, this.nextPosition.y - centerY); // const degree = radians * (180 / Math.PI) * -1 + 100;
+
+    var degree = radians * (180 / Math.PI); // this.object.style.transition = `transform 0.01s linear`;
+    // this.object.style.transform = `rotate(${degree}deg)`;
+
+    console.log('rotating to', degree);
+    return degree;
+  };
+
+  RandomObjectMover.prototype.setSpeed = function (pxPerSec) {
+    this.pixelsPerSecond = pxPerSec;
+  };
+
+  RandomObjectMover.prototype.start = function () {
+    if (this.isRunning) return; // Make sure our object has the right css set
+
+    this.object.style.willChange = 'transform';
+    this.object.style.pointerEvents = 'auto';
+    this.boundEvent = this.moveOnce.bind(this); // Bind callback to keep things moving
+
+    this.object.addEventListener('transitionend', this.boundEvent);
+    this.moveOnce();
+    this.isRunning = true;
+  };
+
+  RandomObjectMover.prototype.stop = function () {
+    // if (!this.isRunning) return;
+    this.object.removeEventListener('transitionend', this.boundEvent); // this.isRunning = false;
+  };
+
+  return RandomObjectMover;
+}();
+
+exports.default = RandomObjectMover;
 },{}],"classes/Bug.ts":[function(require,module,exports) {
 "use strict";
 
@@ -169,7 +267,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var __png_1 = __importDefault(require("../images/*.png"));
 
-var utils_1 = require("../utils");
+var RandomObjectMover_1 = __importDefault(require("../utils/RandomObjectMover")); // import { isNearEdge } from '../utils';
+
 
 var Bug =
 /** @class */
@@ -241,47 +340,12 @@ function () {
     });
   };
 
-  Bug.prototype.moveCycle = function () {
-    var _this = this;
-
-    var movement = function movement(step) {
-      // if (isNearEdge(this.bug)) this.rotateBugToNewAngle();
-      // if near edge rotate to opposite angle?
-      _this.bug.style.top = "" + _this.direction[1] + step + "px";
-      _this.bug.style.left = "" + _this.direction[0] + step + "px";
-      step++;
-      requestAnimationFrame(function () {
-        return movement(step);
-      });
-    };
-
-    requestAnimationFrame(function () {
-      return movement(0);
-    });
-  };
-
   Bug.prototype.move = function () {
-    // console.log('random', Math.floor(Math.random() * 360));
-    // TODO: add this to motion function
-    if (utils_1.isNearEdge(this.bug)) this.rotateBugToNewAngle(); // this.moveCycle();
-  };
+    var move = new RandomObjectMover_1.default(this.bug, 60);
+    move.start();
+  }; // moves the legs
+  // TODO: rename this method
 
-  Bug.prototype.rotateBugToNewAngle = function () {
-    var dirlookup = function dirlookup(num) {
-      if (num >= 0 && num <= 90) return ['+', '-'];
-      if (num >= 91 && num <= 180) return ['+', '+'];
-      if (num >= 181 && num <= 270) return ['-', '+'];
-      return ['-', '-'];
-    };
-
-    var newAngle = Math.floor(Math.random() * 360);
-    this.direction = dirlookup(newAngle);
-    console.log({
-      newAngle: newAngle,
-      dir: this.direction
-    });
-    this.bug.style.transform = "rotate(" + newAngle + "deg)";
-  };
 
   Bug.prototype.updateBugObjectPosition = function (frame) {
     this.bug.style.objectPosition = "-" + (this.width + this.width * frame) + "px 0";
@@ -335,7 +399,7 @@ function () {
 }();
 
 exports.default = Bug;
-},{"../images/*.png":"images/*.png","../utils":"utils/index.ts"}],"index.ts":[function(require,module,exports) {
+},{"../images/*.png":"images/*.png","../utils/RandomObjectMover":"utils/RandomObjectMover.ts"}],"index.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -385,7 +449,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56271" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54861" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

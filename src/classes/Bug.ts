@@ -1,5 +1,6 @@
 import images from '../images/*.png';
-import { isNearEdge } from '../utils';
+import RandomObjectMover from '../utils/RandomObjectMover';
+// import { isNearEdge } from '../utils';
 
 class Bug {
   bug: HTMLImageElement;
@@ -68,36 +69,9 @@ class Bug {
     });
   }
 
-  moveCycle() {
-    const movement = (step: number) => {
-      // if (isNearEdge(this.bug)) this.rotateBugToNewAngle();
-      // if near edge rotate to opposite angle?
-      this.bug.style.top = `${this.direction[1]}${step}px`;
-      this.bug.style.left = `${this.direction[0]}${step}px`;
-      step++;
-      requestAnimationFrame(() => movement(step));
-    };
-    requestAnimationFrame(() => movement(0));
-  }
-
   move() {
-    // console.log('random', Math.floor(Math.random() * 360));
-    // TODO: add this to motion function
-    if (isNearEdge(this.bug)) this.rotateBugToNewAngle();
-    // this.moveCycle();
-  }
-
-  rotateBugToNewAngle() {
-    const dirlookup = (num: number) => {
-      if (num >= 0 && num <= 90) return ['+', '-'];
-      if (num >= 91 && num <= 180) return ['+', '+'];
-      if (num >= 181 && num <= 270) return ['-', '+'];
-      return ['-', '-'];
-    };
-    const newAngle = Math.floor(Math.random() * 360);
-    this.direction = dirlookup(newAngle);
-    console.log({ newAngle, dir: this.direction });
-    this.bug.style.transform = `rotate(${newAngle}deg)`;
+    const move = new RandomObjectMover(this.bug, 60);
+    move.start();
   }
 
   setStartTime = (startTime: number, timestamp: number) => {
@@ -105,6 +79,8 @@ class Bug {
     return startTime;
   };
 
+  // moves the legs
+  // TODO: rename this method
   updateBugObjectPosition(frame: number) {
     this.bug.style.objectPosition = `-${this.width + this.width * frame}px 0`;
   }
