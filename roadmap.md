@@ -3,6 +3,7 @@
 - DONE add bundler/compiler
 - DONE add semver
 - refactor
+- add canvas class
 - add eslint airb&b
 - add tests
 - update readme
