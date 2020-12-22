@@ -136,7 +136,7 @@ Object.defineProperty(exports, "__esModule", {
 var RandomObjectMover =
 /** @class */
 function () {
-  function RandomObjectMover(obj, speed) {
+  function RandomObjectMover(obj, objContainer, speed) {
     if (speed === void 0) {
       speed = 250;
     }
@@ -153,6 +153,7 @@ function () {
       y: 0
     };
     this.object = obj;
+    this.objectContainer = objContainer;
     this.pixelsPerSecond = speed;
   }
 
@@ -196,13 +197,14 @@ function () {
 
   RandomObjectMover.prototype.moveOnce = function () {
     // Pick a new spot on the page
-    var next = this.generateNewPosition(); // How far do we have to move?
+    var next = this.generateNewPosition();
+    this.rotate(next); // How far do we have to move?
 
     var delta = this.calcDelta(this.currentPosition, next); // Speed of this transition, rounded to 2DP
 
     var speed = Math.round(delta / this.pixelsPerSecond * 100) / 100;
-    this.object.style.transition = "transform " + speed + "s linear";
-    this.object.style.transform = "translate3d(" + next.x + "px, " + next.y + "px, 0)"; // this.object.style.transform = `rotate(${degree}deg)`;
+    this.objectContainer.style.transition = "transform " + speed + "s linear";
+    this.objectContainer.style.transform = "translate3d(" + next.x + "px, " + next.y + "px, 0)"; // this.object.style.transform = `rotate(${degree}deg)`;
     // Save this new position ready for the next call.
 
     this.currentPosition = next;
@@ -210,21 +212,49 @@ function () {
   }; // TODO: give this a better name
 
 
-  RandomObjectMover.prototype.rotate = function () {
-    var _a = this.object.getClientRects()[0],
+  RandomObjectMover.prototype.rotate = function (next) {
+    // this.object.style.transform = `rotate(${0}deg)`;
+    var _a = this.objectContainer.getClientRects()[0],
         top = _a.top,
         left = _a.left,
         width = _a.width,
         height = _a.height;
     var centerX = left + width / 2;
     var centerY = top + height / 2;
-    var radians = Math.atan2(this.nextPosition.x - centerX, this.nextPosition.y - centerY); // const degree = radians * (180 / Math.PI) * -1 + 100;
-
-    var degree = radians * (180 / Math.PI); // this.object.style.transition = `transform 0.01s linear`;
+    var angle = Math.atan2(next.x - centerX, -(next.y - centerY)) * (180 / Math.PI); // const radians = Math.atan2(centerX - next.x, centerY - next.y);
+    // const radians = Math.atan2(next.x - centerX, next.y - this.currentPosition.y);
+    // Math.atan2(mouse_x - center_x, mouse_y - center_y);
+    // const degree = radians * (180 / Math.PI) * -1 + 100;
+    // let degree = radians * (180 / Math.PI) - 180;
+    // if (degree < 0) degree = 360 + degree;
+    // let final = degree;
+    // if (final >= 180) final -= 160;
+    // if (final < 180) final += 160;
+    // let final = degree
+    // if (final >= 90 && final <= 180 ) final -=
+    // this.object.style.transition = `transform 0.01s linear`;
+    // const angle =
+    //   Math.atan2(next.y, next.x) - Math.atan2(this.currentPosition.y, this.currentPosition.x);
+    // const degree = angle * (180 / Math.PI) + 180;
     // this.object.style.transform = `rotate(${degree}deg)`;
+    // start, target
+    // const angle = () => {
+    //   const dy = next.y - this.currentPosition.y;
+    //   const dx = next.x - this.currentPosition.x;
+    //   let theta = Math.atan2(dy, dx); // range (-PI, PI]
+    //   theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+    //   return theta;
+    // };
+    // const angle360 = () => {
+    //   let theta = angle(); // range (-180, 180]
+    //   if (theta < 0) theta = 360 + theta; // range [0, 360)
+    //   // if (theta <= 180) theta += 180;
+    //   // if (theta >= 180) theta -= 180;
+    //   return theta;
+    // };
 
-    console.log('rotating to', degree);
-    return degree;
+    console.log('rotating to', angle);
+    this.object.style.transform = "rotate(" + angle + "deg)"; // return degree;
   };
 
   RandomObjectMover.prototype.setSpeed = function (pxPerSec) {
@@ -234,18 +264,18 @@ function () {
   RandomObjectMover.prototype.start = function () {
     if (this.isRunning) return; // Make sure our object has the right css set
 
-    this.object.style.willChange = 'transform';
-    this.object.style.pointerEvents = 'auto';
+    this.objectContainer.style.willChange = 'transform';
+    this.objectContainer.style.pointerEvents = 'auto';
     this.boundEvent = this.moveOnce.bind(this); // Bind callback to keep things moving
 
-    this.object.addEventListener('transitionend', this.boundEvent);
+    this.objectContainer.addEventListener('transitionend', this.boundEvent);
     this.moveOnce();
     this.isRunning = true;
   };
 
   RandomObjectMover.prototype.stop = function () {
     // if (!this.isRunning) return;
-    this.object.removeEventListener('transitionend', this.boundEvent); // this.isRunning = false;
+    this.objectContainer.removeEventListener('transitionend', this.boundEvent); // this.isRunning = false;
   };
 
   return RandomObjectMover;
@@ -267,8 +297,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var __png_1 = __importDefault(require("../images/*.png"));
 
-var RandomObjectMover_1 = __importDefault(require("../utils/RandomObjectMover")); // import { isNearEdge } from '../utils';
-
+var RandomObjectMover_1 = __importDefault(require("../utils/RandomObjectMover"));
 
 var Bug =
 /** @class */
@@ -295,6 +324,7 @@ function () {
     };
 
     this.bug = document.createElement('img');
+    this.bugContainer = document.createElement('div');
     this.direction = [];
     this.frames = frames;
     this.height = height;
@@ -308,7 +338,8 @@ function () {
   }
 
   Bug.prototype.appendBugToDOM = function () {
-    document.body.appendChild(this.bug);
+    this.bugContainer.appendChild(this.bug);
+    document.body.appendChild(this.bugContainer);
   };
 
   Bug.prototype.assignBugClassName = function () {
@@ -330,10 +361,20 @@ function () {
   Bug.prototype.createBugStyles = function () {
     Object.assign(this.bug.style, {
       height: this.height + "px",
-      left: 0,
+      // left: 0,
       objectFit: 'none',
       objectPosition: '0 0',
       position: 'fixed',
+      // top: 0,
+      width: this.width + "px"
+    });
+    Object.assign(this.bugContainer.style, {
+      display: 'inline-block',
+      height: this.height + "px",
+      left: 0,
+      // objectFit: 'none',
+      // objectPosition: '0 0',
+      // position: 'fixed',
       top: 0,
       width: this.width + "px",
       zIndex: '9999999'
@@ -341,7 +382,7 @@ function () {
   };
 
   Bug.prototype.move = function () {
-    var move = new RandomObjectMover_1.default(this.bug, 60);
+    var move = new RandomObjectMover_1.default(this.bug, this.bugContainer, 60);
     move.start();
   }; // moves the legs
   // TODO: rename this method
@@ -449,7 +490,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54861" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64049" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

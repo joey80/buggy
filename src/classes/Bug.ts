@@ -1,9 +1,9 @@
 import images from '../images/*.png';
 import RandomObjectMover from '../utils/RandomObjectMover';
-// import { isNearEdge } from '../utils';
 
 class Bug {
   bug: HTMLImageElement;
+  bugContainer: HTMLDivElement;
   direction: Array<string>;
   frames: number;
   height: number;
@@ -25,6 +25,7 @@ class Bug {
     width = 20,
   }) {
     this.bug = document.createElement('img');
+    this.bugContainer = document.createElement('div');
     this.direction = [];
     this.frames = frames;
     this.height = height;
@@ -38,7 +39,8 @@ class Bug {
   }
 
   appendBugToDOM() {
-    document.body.appendChild(this.bug);
+    this.bugContainer.appendChild(this.bug);
+    document.body.appendChild(this.bugContainer);
   }
 
   assignBugClassName() {
@@ -59,10 +61,22 @@ class Bug {
   createBugStyles() {
     Object.assign(this.bug.style, {
       height: `${this.height}px`,
-      left: 0,
+      // left: 0,
       objectFit: 'none',
       objectPosition: '0 0',
       position: 'fixed',
+      // top: 0,
+      width: `${this.width}px`,
+      // zIndex: '9999999',
+    });
+
+    Object.assign(this.bugContainer.style, {
+      display: 'inline-block',
+      height: `${this.height}px`,
+      left: 0,
+      // objectFit: 'none',
+      // objectPosition: '0 0',
+      // position: 'fixed',
       top: 0,
       width: `${this.width}px`,
       zIndex: '9999999',
@@ -70,7 +84,7 @@ class Bug {
   }
 
   move() {
-    const move = new RandomObjectMover(this.bug, 60);
+    const move = new RandomObjectMover(this.bug, this.bugContainer, 60);
     move.start();
   }
 
