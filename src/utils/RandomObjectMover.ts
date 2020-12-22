@@ -9,14 +9,16 @@ class RandomObjectMover {
   isRunning: boolean;
   nextPosition: Vector;
   object: HTMLImageElement;
+  objectContainer: HTMLDivElement;
   pixelsPerSecond: number;
 
-  constructor(obj: HTMLImageElement, speed = 250) {
+  constructor(obj: HTMLImageElement, objContainer: HTMLDivElement, speed = 250) {
     this.boundEvent = () => {};
     this.currentPosition = { x: 0, y: 0 };
     this.isRunning = false;
     this.nextPosition = { x: 0, y: 0 };
     this.object = obj;
+    this.objectContainer = objContainer;
     this.pixelsPerSecond = speed;
   }
 
@@ -55,6 +57,7 @@ class RandomObjectMover {
   moveOnce() {
     // Pick a new spot on the page
     const next = this.generateNewPosition();
+    this.rotate(next);
 
     // How far do we have to move?
     const delta = this.calcDelta(this.currentPosition, next);
@@ -62,8 +65,8 @@ class RandomObjectMover {
     // Speed of this transition, rounded to 2DP
     const speed = Math.round((delta / this.pixelsPerSecond) * 100) / 100;
 
-    this.object.style.transition = `transform ${speed}s linear`;
-    this.object.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
+    this.objectContainer.style.transition = `transform ${speed}s linear`;
+    this.objectContainer.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
     // this.object.style.transform = `rotate(${degree}deg)`;
 
     // Save this new position ready for the next call.
@@ -72,17 +75,50 @@ class RandomObjectMover {
   }
 
   // TODO: give this a better name
-  rotate() {
-    const { top, left, width, height } = this.object.getClientRects()[0];
+  rotate(next: Vector) {
+    // this.object.style.transform = `rotate(${0}deg)`;
+    const { top, left, width, height } = this.objectContainer.getClientRects()[0];
     const centerX = left + width / 2;
     const centerY = top + height / 2;
-    const radians = Math.atan2(this.nextPosition.x - centerX, this.nextPosition.y - centerY);
+    const angle = Math.atan2(next.x - centerX, -(next.y - centerY)) * (180 / Math.PI);
+    // const radians = Math.atan2(centerX - next.x, centerY - next.y);
+    // const radians = Math.atan2(next.x - centerX, next.y - this.currentPosition.y);
+    // Math.atan2(mouse_x - center_x, mouse_y - center_y);
     // const degree = radians * (180 / Math.PI) * -1 + 100;
-    const degree = radians * (180 / Math.PI);
+    // let degree = radians * (180 / Math.PI) - 180;
+    // if (degree < 0) degree = 360 + degree;
+
+    // let final = degree;
+    // if (final >= 180) final -= 160;
+    // if (final < 180) final += 160;
+
+    // let final = degree
+    // if (final >= 90 && final <= 180 ) final -=
     // this.object.style.transition = `transform 0.01s linear`;
+    // const angle =
+    //   Math.atan2(next.y, next.x) - Math.atan2(this.currentPosition.y, this.currentPosition.x);
+    // const degree = angle * (180 / Math.PI) + 180;
     // this.object.style.transform = `rotate(${degree}deg)`;
-    console.log('rotating to', degree);
-    return degree;
+
+    // start, target
+    // const angle = () => {
+    //   const dy = next.y - this.currentPosition.y;
+    //   const dx = next.x - this.currentPosition.x;
+    //   let theta = Math.atan2(dy, dx); // range (-PI, PI]
+    //   theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+    //   return theta;
+    // };
+
+    // const angle360 = () => {
+    //   let theta = angle(); // range (-180, 180]
+    //   if (theta < 0) theta = 360 + theta; // range [0, 360)
+    //   // if (theta <= 180) theta += 180;
+    //   // if (theta >= 180) theta -= 180;
+    //   return theta;
+    // };
+    console.log('rotating to', angle);
+    this.object.style.transform = `rotate(${angle}deg)`;
+    // return degree;
   }
 
   setSpeed(pxPerSec: number) {
@@ -93,13 +129,13 @@ class RandomObjectMover {
     if (this.isRunning) return;
 
     // Make sure our object has the right css set
-    this.object.style.willChange = 'transform';
-    this.object.style.pointerEvents = 'auto';
+    this.objectContainer.style.willChange = 'transform';
+    this.objectContainer.style.pointerEvents = 'auto';
 
     this.boundEvent = this.moveOnce.bind(this);
 
     // Bind callback to keep things moving
-    this.object.addEventListener('transitionend', this.boundEvent);
+    this.objectContainer.addEventListener('transitionend', this.boundEvent);
 
     this.moveOnce();
     this.isRunning = true;
@@ -108,7 +144,7 @@ class RandomObjectMover {
   stop() {
     // if (!this.isRunning) return;
 
-    this.object.removeEventListener('transitionend', this.boundEvent);
+    this.objectContainer.removeEventListener('transitionend', this.boundEvent);
     // this.isRunning = false;
   }
 }
