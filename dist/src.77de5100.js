@@ -160,60 +160,18 @@ function () {
   RandomObjectMover.prototype.calcDelta = function (a, b) {
     var dx = a.x - b.x;
     var dy = a.y - b.y;
-    var dist = Math.sqrt(dx * dx + dy * dy);
-    return dist;
+    return Math.sqrt(dx * dx + dy * dy);
   };
 
-  RandomObjectMover.prototype.generateNewPosition = function () {
-    // Get container dimensions minus div size
-    var containerSize = this.getContainerDimensions();
-    var availableHeight = containerSize.height - this.object.clientHeight;
-    var availableWidth = containerSize.width - this.object.clientWidth; // Pick a random place in the space
-
-    var x = Math.floor(Math.random() * availableWidth);
-    var y = Math.floor(Math.random() * availableHeight);
-    console.log('newPos', {
-      oldPos: this.currentPosition,
-      newPos: {
-        x: x,
-        y: y
-      }
-    });
+  RandomObjectMover.prototype.calcRandomVector = function (w, h) {
     return {
-      x: x,
-      y: y
+      x: Math.floor(Math.random() * w),
+      y: Math.floor(Math.random() * h)
     };
-  }; // TODO: needs a better name
-  // window
+  }; // Return the angle from the center point of the object to where we are going
 
 
-  RandomObjectMover.prototype.getContainerDimensions = function () {
-    return {
-      height: document.documentElement.clientHeight,
-      width: document.documentElement.clientWidth
-    };
-  }; // TODO: Rotate a parent div of the bug??
-
-
-  RandomObjectMover.prototype.moveOnce = function () {
-    // Pick a new spot on the page
-    var next = this.generateNewPosition();
-    this.rotate(next); // How far do we have to move?
-
-    var delta = this.calcDelta(this.currentPosition, next); // Speed of this transition, rounded to 2DP
-
-    var speed = Math.round(delta / this.pixelsPerSecond * 100) / 100;
-    this.objectContainer.style.transition = "transform " + speed + "s linear";
-    this.objectContainer.style.transform = "translate3d(" + next.x + "px, " + next.y + "px, 0)"; // this.object.style.transform = `rotate(${degree}deg)`;
-    // Save this new position ready for the next call.
-
-    this.currentPosition = next;
-    this.isRunning = true;
-  }; // TODO: give this a better name
-
-
-  RandomObjectMover.prototype.rotate = function (next) {
-    // this.object.style.transform = `rotate(${0}deg)`;
+  RandomObjectMover.prototype.calcRotation = function (next) {
     var _a = this.objectContainer.getClientRects()[0],
         top = _a.top,
         left = _a.left,
@@ -221,61 +179,84 @@ function () {
         height = _a.height;
     var centerX = left + width / 2;
     var centerY = top + height / 2;
-    var angle = Math.atan2(next.x - centerX, -(next.y - centerY)) * (180 / Math.PI); // const radians = Math.atan2(centerX - next.x, centerY - next.y);
-    // const radians = Math.atan2(next.x - centerX, next.y - this.currentPosition.y);
-    // Math.atan2(mouse_x - center_x, mouse_y - center_y);
-    // const degree = radians * (180 / Math.PI) * -1 + 100;
-    // let degree = radians * (180 / Math.PI) - 180;
-    // if (degree < 0) degree = 360 + degree;
-    // let final = degree;
-    // if (final >= 180) final -= 160;
-    // if (final < 180) final += 160;
-    // let final = degree
-    // if (final >= 90 && final <= 180 ) final -=
-    // this.object.style.transition = `transform 0.01s linear`;
-    // const angle =
-    //   Math.atan2(next.y, next.x) - Math.atan2(this.currentPosition.y, this.currentPosition.x);
-    // const degree = angle * (180 / Math.PI) + 180;
-    // this.object.style.transform = `rotate(${degree}deg)`;
-    // start, target
-    // const angle = () => {
-    //   const dy = next.y - this.currentPosition.y;
-    //   const dx = next.x - this.currentPosition.x;
-    //   let theta = Math.atan2(dy, dx); // range (-PI, PI]
-    //   theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
-    //   return theta;
-    // };
-    // const angle360 = () => {
-    //   let theta = angle(); // range (-180, 180]
-    //   if (theta < 0) theta = 360 + theta; // range [0, 360)
-    //   // if (theta <= 180) theta += 180;
-    //   // if (theta >= 180) theta -= 180;
-    //   return theta;
-    // };
-
-    console.log('rotating to', angle);
-    this.object.style.transform = "rotate(" + angle + "deg)"; // return degree;
+    return Math.atan2(next.x - centerX, -(next.y - centerY)) * (180 / Math.PI);
   };
 
-  RandomObjectMover.prototype.setSpeed = function (pxPerSec) {
-    this.pixelsPerSecond = pxPerSec;
+  RandomObjectMover.prototype.calcSpeed = function (delta) {
+    return Math.round(delta / this.pixelsPerSecond * 100) / 100;
   };
+
+  RandomObjectMover.prototype.calcWindowSize = function () {
+    return {
+      height: document.documentElement.clientHeight,
+      width: document.documentElement.clientWidth
+    };
+  };
+
+  RandomObjectMover.prototype.generateNewPosition = function () {
+    var _a = this.calcWindowSize(),
+        height = _a.height,
+        width = _a.width;
+
+    var totalWidth = width - this.object.clientWidth;
+    var totalHeight = height - this.object.clientHeight;
+    return this.calcRandomVector(totalWidth, totalHeight);
+  };
+
+  RandomObjectMover.prototype.moveObject = function () {
+    // Pick a new position and rotate towards it
+    var next = this.generateNewPosition();
+    this.setRotation(next); // Calculate motion
+
+    var delta = this.calcDelta(this.currentPosition, next);
+    var speed = this.calcSpeed(delta); // CSS transition
+
+    this.styleMovement(speed, next); // Save this new position for the next call.
+
+    this.currentPosition = next;
+    this.isRunning = true;
+  };
+
+  RandomObjectMover.prototype.setRotation = function (next) {
+    var angle = this.calcRotation(next);
+    this.styleRotation(angle);
+  }; // TODO: Change to requestAnimationFrame
+
 
   RandomObjectMover.prototype.start = function () {
     if (this.isRunning) return; // Make sure our object has the right css set
 
-    this.objectContainer.style.willChange = 'transform';
-    this.objectContainer.style.pointerEvents = 'auto';
-    this.boundEvent = this.moveOnce.bind(this); // Bind callback to keep things moving
+    this.styleInitial(); // Create animation loop
 
+    this.boundEvent = this.moveObject.bind(this);
     this.objectContainer.addEventListener('transitionend', this.boundEvent);
-    this.moveOnce();
+    this.moveObject();
     this.isRunning = true;
   };
 
   RandomObjectMover.prototype.stop = function () {
-    // if (!this.isRunning) return;
-    this.objectContainer.removeEventListener('transitionend', this.boundEvent); // this.isRunning = false;
+    if (!this.isRunning) return; // Remove animation loop
+
+    this.objectContainer.removeEventListener('transitionend', this.boundEvent);
+    this.isRunning = false;
+  };
+
+  RandomObjectMover.prototype.styleInitial = function () {
+    Object.assign(this.objectContainer.style, {
+      pointerEvents: 'auto',
+      willChange: 'transform'
+    });
+  };
+
+  RandomObjectMover.prototype.styleMovement = function (speed, next) {
+    Object.assign(this.objectContainer.style, {
+      transition: "transform " + speed + "s linear",
+      transform: "translate3d(" + next.x + "px, " + next.y + "px, 0)"
+    });
+  };
+
+  RandomObjectMover.prototype.styleRotation = function (angle) {
+    this.object.style.transform = "rotate(" + angle + "deg)";
   };
 
   return RandomObjectMover;
@@ -361,20 +342,15 @@ function () {
   Bug.prototype.createBugStyles = function () {
     Object.assign(this.bug.style, {
       height: this.height + "px",
-      // left: 0,
       objectFit: 'none',
       objectPosition: '0 0',
       position: 'fixed',
-      // top: 0,
       width: this.width + "px"
     });
     Object.assign(this.bugContainer.style, {
       display: 'inline-block',
       height: this.height + "px",
       left: 0,
-      // objectFit: 'none',
-      // objectPosition: '0 0',
-      // position: 'fixed',
       top: 0,
       width: this.width + "px",
       zIndex: '9999999'
@@ -490,7 +466,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64049" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51722" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
