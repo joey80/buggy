@@ -61,22 +61,16 @@ class Bug {
   createBugStyles() {
     Object.assign(this.bug.style, {
       height: `${this.height}px`,
-      // left: 0,
       objectFit: 'none',
       objectPosition: '0 0',
       position: 'fixed',
-      // top: 0,
       width: `${this.width}px`,
-      // zIndex: '9999999',
     });
 
     Object.assign(this.bugContainer.style, {
       display: 'inline-block',
       height: `${this.height}px`,
       left: 0,
-      // objectFit: 'none',
-      // objectPosition: '0 0',
-      // position: 'fixed',
       top: 0,
       width: `${this.width}px`,
       zIndex: '9999999',
