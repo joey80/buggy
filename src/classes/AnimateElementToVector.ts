@@ -3,16 +3,16 @@ interface Vector {
   y: number;
 }
 
-class RandomObjectMover {
+class AnimateElementToVector {
   boundEvent: (ev: TransitionEvent) => void;
   currentPosition: Vector;
   isRunning: boolean;
   nextPosition: Vector;
-  object: HTMLImageElement;
-  objectContainer: HTMLDivElement;
+  object: HTMLElement;
+  objectContainer: HTMLElement;
   pixelsPerSecond: number;
 
-  constructor(obj: HTMLImageElement, objContainer: HTMLDivElement, speed = 250) {
+  constructor(obj: HTMLElement, objContainer: HTMLElement, speed = 250) {
     this.boundEvent = () => {};
     this.currentPosition = { x: 0, y: 0 };
     this.isRunning = false;
@@ -21,6 +21,12 @@ class RandomObjectMover {
     this.objectContainer = objContainer;
     this.pixelsPerSecond = speed;
   }
+
+  // TODO: add better typing
+  // TODO: make contructor an object
+  // TODO: create init method
+  // TODO: Add pauses randomly on the way to new position
+  // TODO: Add 'jerky' randomness
 
   calcDelta(a: Vector, b: Vector) {
     const dx = a.x - b.x;
@@ -124,4 +130,4 @@ class RandomObjectMover {
   }
 }
 
-export default RandomObjectMover;
+export default AnimateElementToVector;

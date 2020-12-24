@@ -126,17 +126,17 @@ module.exports = {
   "fly": require("./fly.png"),
   "spider": require("./spider.png")
 };
-},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"utils/RandomObjectMover.ts":[function(require,module,exports) {
+},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"classes/AnimateElementToVector.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var RandomObjectMover =
+var AnimateElementToVector =
 /** @class */
 function () {
-  function RandomObjectMover(obj, objContainer, speed) {
+  function AnimateElementToVector(obj, objContainer, speed) {
     if (speed === void 0) {
       speed = 250;
     }
@@ -155,15 +155,18 @@ function () {
     this.object = obj;
     this.objectContainer = objContainer;
     this.pixelsPerSecond = speed;
-  }
+  } // TODO: create init method
+  // TODO: Add pauses randomly on the way to new position
+  // TODO: Add 'jerky' randomness
 
-  RandomObjectMover.prototype.calcDelta = function (a, b) {
+
+  AnimateElementToVector.prototype.calcDelta = function (a, b) {
     var dx = a.x - b.x;
     var dy = a.y - b.y;
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  RandomObjectMover.prototype.calcRandomVector = function (w, h) {
+  AnimateElementToVector.prototype.calcRandomVector = function (w, h) {
     return {
       x: Math.floor(Math.random() * w),
       y: Math.floor(Math.random() * h)
@@ -171,7 +174,7 @@ function () {
   }; // Return the angle from the center point of the object to where we are going
 
 
-  RandomObjectMover.prototype.calcRotation = function (next) {
+  AnimateElementToVector.prototype.calcRotation = function (next) {
     var _a = this.objectContainer.getClientRects()[0],
         top = _a.top,
         left = _a.left,
@@ -182,18 +185,18 @@ function () {
     return Math.atan2(next.x - centerX, -(next.y - centerY)) * (180 / Math.PI);
   };
 
-  RandomObjectMover.prototype.calcSpeed = function (delta) {
+  AnimateElementToVector.prototype.calcSpeed = function (delta) {
     return Math.round(delta / this.pixelsPerSecond * 100) / 100;
   };
 
-  RandomObjectMover.prototype.calcWindowSize = function () {
+  AnimateElementToVector.prototype.calcWindowSize = function () {
     return {
       height: document.documentElement.clientHeight,
       width: document.documentElement.clientWidth
     };
   };
 
-  RandomObjectMover.prototype.generateNewPosition = function () {
+  AnimateElementToVector.prototype.generateNewPosition = function () {
     var _a = this.calcWindowSize(),
         height = _a.height,
         width = _a.width;
@@ -203,7 +206,7 @@ function () {
     return this.calcRandomVector(totalWidth, totalHeight);
   };
 
-  RandomObjectMover.prototype.moveObject = function () {
+  AnimateElementToVector.prototype.moveObject = function () {
     // Pick a new position and rotate towards it
     var next = this.generateNewPosition();
     this.setRotation(next); // Calculate motion
@@ -217,13 +220,13 @@ function () {
     this.isRunning = true;
   };
 
-  RandomObjectMover.prototype.setRotation = function (next) {
+  AnimateElementToVector.prototype.setRotation = function (next) {
     var angle = this.calcRotation(next);
     this.styleRotation(angle);
   }; // TODO: Change to requestAnimationFrame
 
 
-  RandomObjectMover.prototype.start = function () {
+  AnimateElementToVector.prototype.start = function () {
     if (this.isRunning) return; // Make sure our object has the right css set
 
     this.styleInitial(); // Create animation loop
@@ -234,36 +237,160 @@ function () {
     this.isRunning = true;
   };
 
-  RandomObjectMover.prototype.stop = function () {
+  AnimateElementToVector.prototype.stop = function () {
     if (!this.isRunning) return; // Remove animation loop
 
     this.objectContainer.removeEventListener('transitionend', this.boundEvent);
     this.isRunning = false;
   };
 
-  RandomObjectMover.prototype.styleInitial = function () {
+  AnimateElementToVector.prototype.styleInitial = function () {
     Object.assign(this.objectContainer.style, {
       pointerEvents: 'auto',
       willChange: 'transform'
     });
   };
 
-  RandomObjectMover.prototype.styleMovement = function (speed, next) {
+  AnimateElementToVector.prototype.styleMovement = function (speed, next) {
     Object.assign(this.objectContainer.style, {
       transition: "transform " + speed + "s linear",
       transform: "translate3d(" + next.x + "px, " + next.y + "px, 0)"
     });
   };
 
-  RandomObjectMover.prototype.styleRotation = function (angle) {
+  AnimateElementToVector.prototype.styleRotation = function (angle) {
     this.object.style.transform = "rotate(" + angle + "deg)";
   };
 
-  return RandomObjectMover;
+  return AnimateElementToVector;
 }();
 
-exports.default = RandomObjectMover;
-},{}],"classes/Bug.ts":[function(require,module,exports) {
+exports.default = AnimateElementToVector;
+},{}],"classes/AnimateSpriteFrames.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var AnimateSpriteFrames =
+/** @class */
+function () {
+  function AnimateSpriteFrames(obj, frames, speed, width) {
+    this.setStartTime = function (startTime, timestamp) {
+      if (startTime === 0) return timestamp;
+      return startTime;
+    };
+
+    this.frames = frames;
+    this.obj = obj;
+    this.speed = speed;
+    this.width = width;
+  } // TODO: move to classes folder
+  // TODO: create init method
+  // TODO: add stop method
+
+
+  AnimateSpriteFrames.prototype.checkIfOnLastFrame = function (frame) {
+    if (frame === this.frames - 1) {
+      return 0;
+    }
+
+    return frame;
+  };
+
+  AnimateSpriteFrames.prototype.styleSpritePosition = function (frame) {
+    this.obj.style.objectPosition = "-" + (this.width + this.width * frame) + "px 0";
+  };
+
+  AnimateSpriteFrames.prototype.start = function () {
+    var _this = this;
+
+    var startTime = 0;
+
+    var determineProgress = function determineProgress(startTime, timestamp) {
+      return (timestamp - startTime) / 1 / _this.speed;
+    };
+
+    var walkCycle = function walkCycle(timestamp, frame) {
+      startTime = _this.setStartTime(startTime, timestamp);
+      var progress = determineProgress(startTime, timestamp);
+      frame = _this.checkIfOnLastFrame(frame);
+
+      if (progress >= 1) {
+        _this.styleSpritePosition(frame);
+
+        frame++;
+        startTime = 0;
+      }
+
+      requestAnimationFrame(function (timestamp) {
+        return walkCycle(timestamp, frame);
+      });
+    };
+
+    requestAnimationFrame(function (timestamp) {
+      return walkCycle(timestamp, 0);
+    });
+  };
+
+  return AnimateSpriteFrames;
+}();
+
+exports.default = AnimateSpriteFrames;
+},{}],"classes/WalkAndMove.ts":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var AnimateElementToVector_1 = __importDefault(require("./AnimateElementToVector"));
+
+var AnimateSpriteFrames_1 = __importDefault(require("./AnimateSpriteFrames"));
+
+var WalkAndMove =
+/** @class */
+function () {
+  function WalkAndMove(_a) {
+    var obj = _a.obj,
+        objContainer = _a.objContainer,
+        objSpeed = _a.objSpeed,
+        objContainerSpeed = _a.objContainerSpeed,
+        frames = _a.frames,
+        width = _a.width;
+    this.obj = obj;
+    this.objContainer = objContainer;
+    this.objSpeed = objSpeed;
+    this.objContainerSpeed = objContainerSpeed;
+    this.frames = frames;
+    this.width = width;
+  }
+
+  WalkAndMove.prototype.init = function () {
+    var _this = this; // start walk cycle
+
+
+    var walk = new AnimateSpriteFrames_1.default(this.obj, this.frames, this.objSpeed, this.width);
+    walk.start(); // move around screen
+
+    setTimeout(function () {
+      var move = new AnimateElementToVector_1.default(_this.obj, _this.objContainer, _this.objContainerSpeed);
+      move.start();
+    }, 1000);
+  };
+
+  return WalkAndMove;
+}();
+
+exports.default = WalkAndMove;
+},{"./AnimateElementToVector":"classes/AnimateElementToVector.ts","./AnimateSpriteFrames":"classes/AnimateSpriteFrames.ts"}],"classes/Bug.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -278,7 +405,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var __png_1 = __importDefault(require("../images/*.png"));
 
-var RandomObjectMover_1 = __importDefault(require("../utils/RandomObjectMover"));
+var WalkAndMove_1 = __importDefault(require("./WalkAndMove"));
 
 var Bug =
 /** @class */
@@ -298,12 +425,6 @@ function () {
         walkSpeed = _g === void 0 ? 100 : _g,
         _h = _a.width,
         width = _h === void 0 ? 20 : _h;
-
-    this.setStartTime = function (startTime, timestamp) {
-      if (startTime === 0) return timestamp;
-      return startTime;
-    };
-
     this.bug = document.createElement('img');
     this.bugContainer = document.createElement('div');
     this.direction = [];
@@ -316,7 +437,42 @@ function () {
     this.sprite = sprite;
     this.walkSpeed = walkSpeed;
     this.width = width;
-  }
+  } // TODO: should be positioned offscreen to start with from a random side
+  // TODO: add random scale size
+  // TODO: add deaths if clicked
+  // TODO: pick a new path if moused over
+
+
+  Bug.prototype.init = function () {
+    this.create(); // this.walk();
+
+    this.move();
+  };
+
+  Bug.prototype.create = function () {
+    this.assignBugClassName();
+    this.createBugImage();
+    this.createBugStyles();
+    this.appendBugToDOM();
+  }; // walk() {
+  //   const walk = new AnimateSpriteFrames(this.bug, this.frames, this.walkSpeed, this.width);
+  //   walk.start();
+  // }
+
+
+  Bug.prototype.move = function () {
+    // const move = new AnimateElementToVector(this.bug, this.bugContainer, 60);
+    // move.start();
+    var move = new WalkAndMove_1.default({
+      frames: this.frames,
+      obj: this.bug,
+      objContainer: this.bugContainer,
+      objSpeed: this.walkSpeed,
+      objContainerSpeed: 60,
+      width: this.width
+    });
+    move.init();
+  };
 
   Bug.prototype.appendBugToDOM = function () {
     this.bugContainer.appendChild(this.bug);
@@ -325,14 +481,6 @@ function () {
 
   Bug.prototype.assignBugClassName = function () {
     this.bug.className = 'bug';
-  };
-
-  Bug.prototype.checkIfOnLastFrame = function (frame) {
-    if (frame === this.frames - 1) {
-      return 0;
-    }
-
-    return frame;
   };
 
   Bug.prototype.createBugImage = function () {
@@ -357,66 +505,11 @@ function () {
     });
   };
 
-  Bug.prototype.move = function () {
-    var move = new RandomObjectMover_1.default(this.bug, this.bugContainer, 60);
-    move.start();
-  }; // moves the legs
-  // TODO: rename this method
-
-
-  Bug.prototype.updateBugObjectPosition = function (frame) {
-    this.bug.style.objectPosition = "-" + (this.width + this.width * frame) + "px 0";
-  };
-
-  Bug.prototype.init = function () {
-    this.create();
-    this.walk();
-    this.move();
-  };
-
-  Bug.prototype.create = function () {
-    this.assignBugClassName();
-    this.createBugImage();
-    this.createBugStyles();
-    this.appendBugToDOM();
-  };
-
-  Bug.prototype.walk = function () {
-    var _this = this;
-
-    var startTime = 0;
-
-    var determineProgress = function determineProgress(startTime, timestamp) {
-      return (timestamp - startTime) / 1 / _this.walkSpeed;
-    };
-
-    var walkCycle = function walkCycle(timestamp, frame) {
-      startTime = _this.setStartTime(startTime, timestamp);
-      var progress = determineProgress(startTime, timestamp);
-      frame = _this.checkIfOnLastFrame(frame);
-
-      if (progress >= 1) {
-        _this.updateBugObjectPosition(frame);
-
-        frame++;
-        startTime = 0;
-      }
-
-      requestAnimationFrame(function (timestamp) {
-        return walkCycle(timestamp, frame);
-      });
-    };
-
-    requestAnimationFrame(function (timestamp) {
-      return walkCycle(timestamp, 0);
-    });
-  };
-
   return Bug;
 }();
 
 exports.default = Bug;
-},{"../images/*.png":"images/*.png","../utils/RandomObjectMover":"utils/RandomObjectMover.ts"}],"index.ts":[function(require,module,exports) {
+},{"../images/*.png":"images/*.png","./WalkAndMove":"classes/WalkAndMove.ts"}],"index.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -429,7 +522,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var Bug_1 = __importDefault(require("./classes/Bug"));
+var Bug_1 = __importDefault(require("./classes/Bug")); // TODO: make a spider class with these as defaults
+
 
 var Spider = new Bug_1.default({
   frames: 7,
@@ -466,7 +560,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51722" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64652" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

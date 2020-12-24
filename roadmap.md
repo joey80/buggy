@@ -3,7 +3,10 @@
 - DONE add bundler/compiler
 - DONE add semver
 - refactor
-- add canvas class
+- add MIT license and header
 - add eslint airb&b
 - add tests
 - update readme
+- create chrome extension
+- add second bug type
+- add better/different/real images
