@@ -1,9 +1,9 @@
 import images from '../images/*.png';
-import RandomObjectMover from '../utils/RandomObjectMover';
+import WalkAndMove from './WalkAndMove';
 
 class Bug {
   bug: HTMLImageElement;
-  bugContainer: HTMLDivElement;
+  bugContainer: HTMLElement;
   direction: Array<string>;
   frames: number;
   height: number;
@@ -38,6 +38,37 @@ class Bug {
     this.width = width;
   }
 
+  // TODO: add better typing
+  // TODO: should be positioned offscreen to start with from a random side
+  // TODO: add random scale size
+  // TODO: add deaths if clicked
+  // TODO: pick a new path if moused over
+
+  init() {
+    this.create();
+    this.move();
+  }
+
+  create() {
+    this.assignBugClassName();
+    this.createBugImage();
+    this.createBugStyles();
+    this.appendBugToDOM();
+  }
+
+  move() {
+    const move = new WalkAndMove({
+      frames: this.frames,
+      obj: this.bug,
+      objContainer: this.bugContainer,
+      objSpeed: this.walkSpeed,
+      objContainerSpeed: 60,
+      width: this.width,
+    });
+
+    move.init();
+  }
+
   appendBugToDOM() {
     this.bugContainer.appendChild(this.bug);
     document.body.appendChild(this.bugContainer);
@@ -45,13 +76,6 @@ class Bug {
 
   assignBugClassName() {
     this.bug.className = 'bug';
-  }
-
-  checkIfOnLastFrame(frame: number) {
-    if (frame === this.frames - 1) {
-      return 0;
-    }
-    return frame;
   }
 
   createBugImage() {
@@ -75,55 +99,6 @@ class Bug {
       width: `${this.width}px`,
       zIndex: '9999999',
     });
-  }
-
-  move() {
-    const move = new RandomObjectMover(this.bug, this.bugContainer, 60);
-    move.start();
-  }
-
-  setStartTime = (startTime: number, timestamp: number) => {
-    if (startTime === 0) return timestamp;
-    return startTime;
-  };
-
-  // moves the legs
-  // TODO: rename this method
-  updateBugObjectPosition(frame: number) {
-    this.bug.style.objectPosition = `-${this.width + this.width * frame}px 0`;
-  }
-
-  init() {
-    this.create();
-    this.walk();
-    this.move();
-  }
-
-  create() {
-    this.assignBugClassName();
-    this.createBugImage();
-    this.createBugStyles();
-    this.appendBugToDOM();
-  }
-
-  walk() {
-    let startTime = 0;
-    const determineProgress = (startTime: number, timestamp: number) => {
-      return (timestamp - startTime) / 1 / this.walkSpeed;
-    };
-
-    const walkCycle = (timestamp: number, frame: number) => {
-      startTime = this.setStartTime(startTime, timestamp);
-      const progress = determineProgress(startTime, timestamp);
-      frame = this.checkIfOnLastFrame(frame);
-      if (progress >= 1) {
-        this.updateBugObjectPosition(frame);
-        frame++;
-        startTime = 0;
-      }
-      requestAnimationFrame((timestamp) => walkCycle(timestamp, frame));
-    };
-    requestAnimationFrame((timestamp) => walkCycle(timestamp, 0));
   }
 }
 
