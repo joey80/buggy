@@ -136,27 +136,21 @@ Object.defineProperty(exports, "__esModule", {
 var AnimateElementToVector =
 /** @class */
 function () {
-  function AnimateElementToVector(obj, objContainer, speed) {
-    if (speed === void 0) {
-      speed = 250;
-    }
-
-    this.boundEvent = function () {};
-
+  function AnimateElementToVector(_a) {
+    var obj = _a.obj,
+        objContainer = _a.objContainer,
+        speed = _a.speed;
     this.currentPosition = {
       x: 0,
       y: 0
     };
     this.isRunning = false;
-    this.nextPosition = {
-      x: 0,
-      y: 0
-    };
-    this.object = obj;
-    this.objectContainer = objContainer;
-    this.pixelsPerSecond = speed;
-  } // TODO: create init method
-  // TODO: Add pauses randomly on the way to new position
+    this.obj = obj;
+    this.objContainer = objContainer;
+    this.pixelsPerSecond = speed; // Make sure our object has the right css set
+
+    this.styleInitial();
+  } // TODO: Add pauses randomly on the way to new position
   // TODO: Add 'jerky' randomness
 
 
@@ -166,23 +160,23 @@ function () {
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  AnimateElementToVector.prototype.calcRandomVector = function (w, h) {
+  AnimateElementToVector.prototype.calcRandomVector = function (width, height) {
     return {
-      x: Math.floor(Math.random() * w),
-      y: Math.floor(Math.random() * h)
+      x: Math.floor(Math.random() * width),
+      y: Math.floor(Math.random() * height)
     };
-  }; // Return the angle from the center point of the object to where we are going
+  }; // Return the angle from the center point of the element to the vector of the next position
 
 
-  AnimateElementToVector.prototype.calcRotation = function (next) {
-    var _a = this.objectContainer.getClientRects()[0],
+  AnimateElementToVector.prototype.calcRotation = function (nextPos) {
+    var _a = this.objContainer.getClientRects()[0],
         top = _a.top,
         left = _a.left,
         width = _a.width,
         height = _a.height;
     var centerX = left + width / 2;
     var centerY = top + height / 2;
-    return Math.atan2(next.x - centerX, -(next.y - centerY)) * (180 / Math.PI);
+    return Math.atan2(nextPos.x - centerX, -(nextPos.y - centerY)) * (180 / Math.PI);
   };
 
   AnimateElementToVector.prototype.calcSpeed = function (delta) {
@@ -201,65 +195,60 @@ function () {
         height = _a.height,
         width = _a.width;
 
-    var totalWidth = width - this.object.clientWidth;
-    var totalHeight = height - this.object.clientHeight;
+    var totalWidth = width - this.obj.clientWidth;
+    var totalHeight = height - this.obj.clientHeight;
     return this.calcRandomVector(totalWidth, totalHeight);
   };
 
-  AnimateElementToVector.prototype.moveObject = function () {
+  AnimateElementToVector.prototype.moveElement = function () {
     // Pick a new position and rotate towards it
-    var next = this.generateNewPosition();
-    this.setRotation(next); // Calculate motion
+    var nextPos = this.generateNewPosition();
+    this.setRotation(nextPos); // Calculate motion
 
-    var delta = this.calcDelta(this.currentPosition, next);
-    var speed = this.calcSpeed(delta); // CSS transition
+    var delta = this.calcDelta(this.currentPosition, nextPos);
+    var speed = this.calcSpeed(delta); // Animate element via CSS transition
 
-    this.styleMovement(speed, next); // Save this new position for the next call.
+    this.styleMovement(speed, nextPos); // Save this new position for the next call.
 
-    this.currentPosition = next;
-    this.isRunning = true;
+    this.currentPosition = nextPos;
   };
 
-  AnimateElementToVector.prototype.setRotation = function (next) {
-    var angle = this.calcRotation(next);
+  AnimateElementToVector.prototype.setRotation = function (nextPos) {
+    var angle = this.calcRotation(nextPos);
     this.styleRotation(angle);
-  }; // TODO: Change to requestAnimationFrame
-
+  };
 
   AnimateElementToVector.prototype.start = function () {
-    if (this.isRunning) return; // Make sure our object has the right css set
+    if (this.isRunning) return;
+    this.isRunning = true; // Create animation loop
 
-    this.styleInitial(); // Create animation loop
-
-    this.boundEvent = this.moveObject.bind(this);
-    this.objectContainer.addEventListener('transitionend', this.boundEvent);
-    this.moveObject();
-    this.isRunning = true;
+    this.objContainer.addEventListener('transitionend', this.moveElement.bind(this));
+    requestAnimationFrame(this.moveElement.bind(this));
   };
 
   AnimateElementToVector.prototype.stop = function () {
-    if (!this.isRunning) return; // Remove animation loop
+    if (!this.isRunning) return;
+    this.isRunning = false; // Remove animation loop
 
-    this.objectContainer.removeEventListener('transitionend', this.boundEvent);
-    this.isRunning = false;
+    this.objContainer.removeEventListener('transitionend', this.moveElement.bind(this));
   };
 
   AnimateElementToVector.prototype.styleInitial = function () {
-    Object.assign(this.objectContainer.style, {
+    Object.assign(this.objContainer.style, {
       pointerEvents: 'auto',
       willChange: 'transform'
     });
   };
 
-  AnimateElementToVector.prototype.styleMovement = function (speed, next) {
-    Object.assign(this.objectContainer.style, {
+  AnimateElementToVector.prototype.styleMovement = function (speed, nextPos) {
+    Object.assign(this.objContainer.style, {
       transition: "transform " + speed + "s linear",
-      transform: "translate3d(" + next.x + "px, " + next.y + "px, 0)"
+      transform: "translate3d(" + nextPos.x + "px, " + nextPos.y + "px, 0)"
     });
   };
 
   AnimateElementToVector.prototype.styleRotation = function (angle) {
-    this.object.style.transform = "rotate(" + angle + "deg)";
+    this.obj.style.transform = "rotate(" + angle + "deg)";
   };
 
   return AnimateElementToVector;
@@ -276,20 +265,22 @@ Object.defineProperty(exports, "__esModule", {
 var AnimateSpriteFrames =
 /** @class */
 function () {
-  function AnimateSpriteFrames(obj, frames, speed, width) {
-    this.setStartTime = function (startTime, timestamp) {
-      if (startTime === 0) return timestamp;
-      return startTime;
-    };
-
+  function AnimateSpriteFrames(_a) {
+    var frames = _a.frames,
+        obj = _a.obj,
+        speed = _a.speed,
+        width = _a.width;
     this.frames = frames;
+    this.isRunning = false;
     this.obj = obj;
     this.speed = speed;
+    this.startTime = 0;
     this.width = width;
-  } // TODO: move to classes folder
-  // TODO: create init method
-  // TODO: add stop method
+  }
 
+  AnimateSpriteFrames.prototype.calcFPSProgress = function (startTime, timestamp) {
+    return (timestamp - startTime) / 1 / this.speed;
+  };
 
   AnimateSpriteFrames.prototype.checkIfOnLastFrame = function (frame) {
     if (frame === this.frames - 1) {
@@ -299,39 +290,48 @@ function () {
     return frame;
   };
 
+  AnimateSpriteFrames.prototype.setStartTime = function (startTime, timestamp) {
+    if (startTime === 0) {
+      return timestamp;
+    }
+
+    return startTime;
+  };
+
   AnimateSpriteFrames.prototype.styleSpritePosition = function (frame) {
     this.obj.style.objectPosition = "-" + (this.width + this.width * frame) + "px 0";
   };
 
   AnimateSpriteFrames.prototype.start = function () {
+    this.isRunning = true;
+    this.walkCycle(0, 0);
+  };
+
+  AnimateSpriteFrames.prototype.stop = function () {
+    this.isRunning = false;
+    this.styleSpritePosition(0);
+  };
+
+  AnimateSpriteFrames.prototype.walkCycle = function (timestamp, frame) {
     var _this = this;
 
-    var startTime = 0;
+    var startTime = this.startTime;
+    this.startTime = this.setStartTime(startTime, timestamp); // Keeps the sprite frame animation from happening too quickly
 
-    var determineProgress = function determineProgress(startTime, timestamp) {
-      return (timestamp - startTime) / 1 / _this.speed;
-    };
+    var progress = this.calcFPSProgress(this.startTime, timestamp);
+    frame = this.checkIfOnLastFrame(frame); // Update sprite frame if enough time has passed
 
-    var walkCycle = function walkCycle(timestamp, frame) {
-      startTime = _this.setStartTime(startTime, timestamp);
-      var progress = determineProgress(startTime, timestamp);
-      frame = _this.checkIfOnLastFrame(frame);
+    if (progress >= 1) {
+      this.styleSpritePosition(frame);
+      frame++;
+      this.startTime = 0;
+    }
 
-      if (progress >= 1) {
-        _this.styleSpritePosition(frame);
-
-        frame++;
-        startTime = 0;
-      }
-
+    if (this.isRunning) {
       requestAnimationFrame(function (timestamp) {
-        return walkCycle(timestamp, frame);
+        return _this.walkCycle(timestamp, frame);
       });
-    };
-
-    requestAnimationFrame(function (timestamp) {
-      return walkCycle(timestamp, 0);
-    });
+    }
   };
 
   return AnimateSpriteFrames;
@@ -377,11 +377,20 @@ function () {
     var _this = this; // start walk cycle
 
 
-    var walk = new AnimateSpriteFrames_1.default(this.obj, this.frames, this.objSpeed, this.width);
+    var walk = new AnimateSpriteFrames_1.default({
+      frames: this.frames,
+      obj: this.obj,
+      speed: this.objSpeed,
+      width: this.width
+    });
     walk.start(); // move around screen
 
     setTimeout(function () {
-      var move = new AnimateElementToVector_1.default(_this.obj, _this.objContainer, _this.objContainerSpeed);
+      var move = new AnimateElementToVector_1.default({
+        obj: _this.obj,
+        objContainer: _this.objContainer,
+        speed: _this.objContainerSpeed
+      });
       move.start();
     }, 1000);
   };
@@ -444,8 +453,7 @@ function () {
 
 
   Bug.prototype.init = function () {
-    this.create(); // this.walk();
-
+    this.create();
     this.move();
   };
 
@@ -454,15 +462,9 @@ function () {
     this.createBugImage();
     this.createBugStyles();
     this.appendBugToDOM();
-  }; // walk() {
-  //   const walk = new AnimateSpriteFrames(this.bug, this.frames, this.walkSpeed, this.width);
-  //   walk.start();
-  // }
-
+  };
 
   Bug.prototype.move = function () {
-    // const move = new AnimateElementToVector(this.bug, this.bugContainer, 60);
-    // move.start();
     var move = new WalkAndMove_1.default({
       frames: this.frames,
       obj: this.bug,
@@ -509,7 +511,66 @@ function () {
 }();
 
 exports.default = Bug;
-},{"../images/*.png":"images/*.png","./WalkAndMove":"classes/WalkAndMove.ts"}],"index.ts":[function(require,module,exports) {
+},{"../images/*.png":"images/*.png","./WalkAndMove":"classes/WalkAndMove.ts"}],"classes/Spider.ts":[function(require,module,exports) {
+"use strict";
+
+var __extends = this && this.__extends || function () {
+  var _extendStatics = function extendStatics(d, b) {
+    _extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) {
+        if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+      }
+    };
+
+    return _extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    _extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Bug_1 = __importDefault(require("./Bug"));
+
+var Spider =
+/** @class */
+function (_super) {
+  __extends(Spider, _super);
+
+  function Spider() {
+    return _super.call(this, {
+      frames: 7,
+      height: 90,
+      width: 69,
+      sprite: 'spider'
+    }) || this;
+  }
+
+  return Spider;
+}(Bug_1.default);
+
+exports.default = Spider;
+},{"./Bug":"classes/Bug.ts"}],"index.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -522,17 +583,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var Bug_1 = __importDefault(require("./classes/Bug")); // TODO: make a spider class with these as defaults
+var Spider_1 = __importDefault(require("./classes/Spider"));
 
-
-var Spider = new Bug_1.default({
-  frames: 7,
-  height: 90,
-  width: 69,
-  sprite: 'spider'
-});
-Spider.init();
-},{"./classes/Bug":"classes/Bug.ts"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+var SpiderBug = new Spider_1.default();
+SpiderBug.init();
+},{"./classes/Spider":"classes/Spider.ts"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -560,7 +615,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64652" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49783" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
