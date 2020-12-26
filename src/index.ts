@@ -1,12 +1,5 @@
-import Bug from './classes/Bug';
+import Spider from './classes/Spider';
 
-// TODO: make a spider class with these as defaults
+const SpiderBug = new Spider();
 
-const Spider = new Bug({
-  frames: 7,
-  height: 90,
-  width: 69,
-  sprite: 'spider',
-});
-
-Spider.init();
+SpiderBug.init();

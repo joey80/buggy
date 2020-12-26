@@ -38,7 +38,6 @@ class Bug {
     this.width = width;
   }
 
-  // TODO: add better typing
   // TODO: should be positioned offscreen to start with from a random side
   // TODO: add random scale size
   // TODO: add deaths if clicked
