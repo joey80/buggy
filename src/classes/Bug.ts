@@ -48,7 +48,7 @@ class Bug {
     this.move();
   }
 
-  create() {
+  private create() {
     this.assignBugClassName();
     this.createBugImage();
     this.createBugStyles();
@@ -68,20 +68,20 @@ class Bug {
     move.init();
   }
 
-  appendBugToDOM() {
+  private appendBugToDOM() {
     this.bugContainer.appendChild(this.bug);
     document.body.appendChild(this.bugContainer);
   }
 
-  assignBugClassName() {
-    this.bug.className = 'bug';
+  assignBugClassName(name?: string) {
+    this.bug.className = name || 'bug';
   }
 
-  createBugImage() {
+  private createBugImage() {
     this.bug.src = images[this.sprite];
   }
 
-  createBugStyles() {
+  private createBugStyles() {
     Object.assign(this.bug.style, {
       height: `${this.height}px`,
       objectFit: 'none',

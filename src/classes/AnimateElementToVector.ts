@@ -31,6 +31,7 @@ class AnimateElementToVector {
 
   // TODO: Add pauses randomly on the way to new position
   // TODO: Add 'jerky' randomness
+  // TODO: stop() doesnt stop
 
   private calcDelta(a: Vector, b: Vector) {
     const dx = a.x - b.x;
