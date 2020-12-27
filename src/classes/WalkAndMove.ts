@@ -7,6 +7,8 @@ class WalkAndMove {
   private objSpeed: number;
   private objContainerSpeed: number;
   private frames: number;
+  private move?: InstanceType<typeof AnimateElementToVector>;
+  private walk?: InstanceType<typeof AnimateSpriteFrames>;
   private width: number;
 
   constructor({
@@ -34,23 +36,28 @@ class WalkAndMove {
 
   init() {
     // start walk cycle
-    const walk = new AnimateSpriteFrames({
+    this.walk = new AnimateSpriteFrames({
       frames: this.frames,
       obj: this.obj,
       speed: this.objSpeed,
       width: this.width,
     });
-    walk.start();
+    this.walk.start();
 
     // move around screen
     setTimeout(() => {
-      const move = new AnimateElementToVector({
+      this.move = new AnimateElementToVector({
         obj: this.obj,
         objContainer: this.objContainer,
         speed: this.objContainerSpeed,
       });
-      move.start();
+      this.move.start();
     }, 1000);
+  }
+
+  stop() {
+    this.walk?.stop();
+    this.move?.stop();
   }
 }
 

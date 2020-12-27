@@ -152,6 +152,7 @@ function () {
     this.styleInitial();
   } // TODO: Add pauses randomly on the way to new position
   // TODO: Add 'jerky' randomness
+  // TODO: stop() doesnt stop
 
 
   AnimateElementToVector.prototype.calcDelta = function (a, b) {
@@ -377,22 +378,30 @@ function () {
     var _this = this; // start walk cycle
 
 
-    var walk = new AnimateSpriteFrames_1.default({
+    this.walk = new AnimateSpriteFrames_1.default({
       frames: this.frames,
       obj: this.obj,
       speed: this.objSpeed,
       width: this.width
     });
-    walk.start(); // move around screen
+    this.walk.start(); // move around screen
 
     setTimeout(function () {
-      var move = new AnimateElementToVector_1.default({
+      _this.move = new AnimateElementToVector_1.default({
         obj: _this.obj,
         objContainer: _this.objContainer,
         speed: _this.objContainerSpeed
       });
-      move.start();
+
+      _this.move.start();
     }, 1000);
+  };
+
+  WalkAndMove.prototype.stop = function () {
+    var _a, _b;
+
+    (_a = this.walk) === null || _a === void 0 ? void 0 : _a.stop();
+    (_b = this.move) === null || _b === void 0 ? void 0 : _b.stop();
   };
 
   return WalkAndMove;
@@ -481,8 +490,8 @@ function () {
     document.body.appendChild(this.bugContainer);
   };
 
-  Bug.prototype.assignBugClassName = function () {
-    this.bug.className = 'bug';
+  Bug.prototype.assignBugClassName = function (name) {
+    this.bug.className = name || 'bug';
   };
 
   Bug.prototype.createBugImage = function () {
@@ -566,6 +575,10 @@ function (_super) {
     }) || this;
   }
 
+  Spider.prototype.assignBugClassName = function () {
+    _super.prototype.assignBugClassName.call(this, 'spider');
+  };
+
   return Spider;
 }(Bug_1.default);
 
@@ -615,7 +628,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49783" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58071" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
