@@ -1,3 +1,5 @@
+import { calcWindowSize } from '../util';
+
 interface Vector {
   x: number;
   y: number;
@@ -58,18 +60,16 @@ class AnimateElementToVector {
     return Math.round((delta / this.pixelsPerSecond) * 100) / 100;
   }
 
-  private calcWindowSize() {
-    return {
-      height: document.documentElement.clientHeight,
-      width: document.documentElement.clientWidth,
-    };
-  }
-
   private generateNewPosition() {
-    const { height, width } = this.calcWindowSize();
+    const { height, width } = calcWindowSize();
     const totalWidth = width - this.obj.clientWidth;
     const totalHeight = height - this.obj.clientHeight;
     return this.calcRandomVector(totalWidth, totalHeight);
+  }
+
+  private getSpeed(nextPos: Vector) {
+    const delta = this.calcDelta(this.currentPosition, nextPos);
+    return this.calcSpeed(delta);
   }
 
   private moveElement() {
@@ -77,11 +77,8 @@ class AnimateElementToVector {
     const nextPos = this.generateNewPosition();
     this.setRotation(nextPos);
 
-    // Calculate motion
-    const delta = this.calcDelta(this.currentPosition, nextPos);
-    const speed = this.calcSpeed(delta);
-
     // Animate element via CSS transition
+    const speed = this.getSpeed(nextPos);
     this.styleMovement(speed, nextPos);
 
     // Save this new position for the next call.
@@ -114,6 +111,10 @@ class AnimateElementToVector {
     Object.assign(this.objContainer.style, {
       pointerEvents: 'auto',
       willChange: 'transform',
+    });
+
+    Object.assign(document.body.style, {
+      overflowX: 'hidden',
     });
   }
 
