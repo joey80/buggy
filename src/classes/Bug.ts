@@ -1,5 +1,6 @@
 import images from '../images/*.png';
 import WalkAndMove from './WalkAndMove';
+import { getStartingPosition } from '../util';
 
 class Bug {
   bug: HTMLImageElement;
@@ -38,10 +39,10 @@ class Bug {
     this.width = width;
   }
 
-  // TODO: should be positioned offscreen to start with from a random side
   // TODO: add random scale size
   // TODO: add deaths if clicked
   // TODO: pick a new path if moused over
+  // TODO: crawling bugs should burrow out from the screen
 
   init() {
     this.create();
@@ -93,10 +94,10 @@ class Bug {
     Object.assign(this.bugContainer.style, {
       display: 'inline-block',
       height: `${this.height}px`,
-      left: 0,
-      top: 0,
+      transition: 'transform 15s linear',
       width: `${this.width}px`,
       zIndex: '9999999',
+      ...getStartingPosition(this.height, this.width),
     });
   }
 }

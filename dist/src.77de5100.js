@@ -126,12 +126,57 @@ module.exports = {
   "fly": require("./fly.png"),
   "spider": require("./spider.png")
 };
-},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"classes/AnimateElementToVector.ts":[function(require,module,exports) {
+},{"./fly.png":"images/fly.png","./spider.png":"images/spider.png"}],"util/index.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getStartingPosition = exports.calcWindowSize = void 0;
+
+var calcWindowSize = function calcWindowSize() {
+  return {
+    height: document.documentElement.clientHeight,
+    width: document.documentElement.clientWidth
+  };
+};
+
+exports.calcWindowSize = calcWindowSize;
+
+var randomIntFromInterval = function randomIntFromInterval(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
+
+var getStartingPosition = function getStartingPosition(objHeight, objWidth) {
+  var _a = calcWindowSize(),
+      winHeight = _a.height,
+      winWidth = _a.width;
+
+  var randomSide = randomIntFromInterval(1, 4);
+  var randomX = randomIntFromInterval(0, winWidth);
+  var randomY = randomIntFromInterval(0, winHeight); // [null, top, right, bottom, left]
+
+  var sidePosition = [{}, {
+    transform: "translate3d(" + randomX + "px, " + -1.3 * objHeight + "px, 0)"
+  }, {
+    transform: "translate3d(" + (winWidth + 0.3 * objWidth) + "px, " + randomY + "px, 0)"
+  }, {
+    transform: "translate3d(" + randomX + "px, " + (winHeight + 0.3 * objHeight) + "px, 0)"
+  }, {
+    transform: "translate3d(" + -1.3 * objWidth + "px, " + randomY + "px, 0)"
+  }];
+  return sidePosition[randomSide];
+};
+
+exports.getStartingPosition = getStartingPosition;
+},{}],"classes/AnimateElementToVector.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var util_1 = require("../util");
 
 var AnimateElementToVector =
 /** @class */
@@ -184,15 +229,8 @@ function () {
     return Math.round(delta / this.pixelsPerSecond * 100) / 100;
   };
 
-  AnimateElementToVector.prototype.calcWindowSize = function () {
-    return {
-      height: document.documentElement.clientHeight,
-      width: document.documentElement.clientWidth
-    };
-  };
-
   AnimateElementToVector.prototype.generateNewPosition = function () {
-    var _a = this.calcWindowSize(),
+    var _a = util_1.calcWindowSize(),
         height = _a.height,
         width = _a.width;
 
@@ -201,14 +239,17 @@ function () {
     return this.calcRandomVector(totalWidth, totalHeight);
   };
 
+  AnimateElementToVector.prototype.getSpeed = function (nextPos) {
+    var delta = this.calcDelta(this.currentPosition, nextPos);
+    return this.calcSpeed(delta);
+  };
+
   AnimateElementToVector.prototype.moveElement = function () {
     // Pick a new position and rotate towards it
     var nextPos = this.generateNewPosition();
-    this.setRotation(nextPos); // Calculate motion
+    this.setRotation(nextPos); // Animate element via CSS transition
 
-    var delta = this.calcDelta(this.currentPosition, nextPos);
-    var speed = this.calcSpeed(delta); // Animate element via CSS transition
-
+    var speed = this.getSpeed(nextPos);
     this.styleMovement(speed, nextPos); // Save this new position for the next call.
 
     this.currentPosition = nextPos;
@@ -239,6 +280,9 @@ function () {
       pointerEvents: 'auto',
       willChange: 'transform'
     });
+    Object.assign(document.body.style, {
+      overflowX: 'hidden'
+    });
   };
 
   AnimateElementToVector.prototype.styleMovement = function (speed, nextPos) {
@@ -256,7 +300,7 @@ function () {
 }();
 
 exports.default = AnimateElementToVector;
-},{}],"classes/AnimateSpriteFrames.ts":[function(require,module,exports) {
+},{"../util":"util/index.ts"}],"classes/AnimateSpriteFrames.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -411,6 +455,22 @@ exports.default = WalkAndMove;
 },{"./AnimateElementToVector":"classes/AnimateElementToVector.ts","./AnimateSpriteFrames":"classes/AnimateSpriteFrames.ts"}],"classes/Bug.ts":[function(require,module,exports) {
 "use strict";
 
+var __assign = this && this.__assign || function () {
+  __assign = Object.assign || function (t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+      s = arguments[i];
+
+      for (var p in s) {
+        if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+      }
+    }
+
+    return t;
+  };
+
+  return __assign.apply(this, arguments);
+};
+
 var __importDefault = this && this.__importDefault || function (mod) {
   return mod && mod.__esModule ? mod : {
     "default": mod
@@ -424,6 +484,8 @@ Object.defineProperty(exports, "__esModule", {
 var __png_1 = __importDefault(require("../images/*.png"));
 
 var WalkAndMove_1 = __importDefault(require("./WalkAndMove"));
+
+var util_1 = require("../util");
 
 var Bug =
 /** @class */
@@ -455,10 +517,10 @@ function () {
     this.sprite = sprite;
     this.walkSpeed = walkSpeed;
     this.width = width;
-  } // TODO: should be positioned offscreen to start with from a random side
-  // TODO: add random scale size
+  } // TODO: add random scale size
   // TODO: add deaths if clicked
   // TODO: pick a new path if moused over
+  // TODO: crawling bugs should burrow out from the screen
 
 
   Bug.prototype.init = function () {
@@ -506,21 +568,20 @@ function () {
       position: 'fixed',
       width: this.width + "px"
     });
-    Object.assign(this.bugContainer.style, {
+    Object.assign(this.bugContainer.style, __assign({
       display: 'inline-block',
       height: this.height + "px",
-      left: 0,
-      top: 0,
+      transition: 'transform 15s linear',
       width: this.width + "px",
       zIndex: '9999999'
-    });
+    }, util_1.getStartingPosition(this.height, this.width)));
   };
 
   return Bug;
 }();
 
 exports.default = Bug;
-},{"../images/*.png":"images/*.png","./WalkAndMove":"classes/WalkAndMove.ts"}],"classes/Spider.ts":[function(require,module,exports) {
+},{"../images/*.png":"images/*.png","./WalkAndMove":"classes/WalkAndMove.ts","../util":"util/index.ts"}],"classes/Spider.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -628,7 +689,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58071" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62470" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
