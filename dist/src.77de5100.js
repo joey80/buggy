@@ -147,7 +147,7 @@ var randomIntFromInterval = function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 };
 
-var getStartingPosition = function getStartingPosition(objHeight, objWidth) {
+var getStartingPosition = function getStartingPosition(objHeight, objWidth, scale) {
   var _a = calcWindowSize(),
       winHeight = _a.height,
       winWidth = _a.width;
@@ -157,13 +157,13 @@ var getStartingPosition = function getStartingPosition(objHeight, objWidth) {
   var randomY = randomIntFromInterval(0, winHeight); // [null, top, right, bottom, left]
 
   var sidePosition = [{}, {
-    transform: "translate3d(" + randomX + "px, " + -1.3 * objHeight + "px, 0)"
+    transform: "translate3d(" + randomX + "px, " + -1.3 * objHeight + "px, 0) " + scale
   }, {
-    transform: "translate3d(" + (winWidth + 0.3 * objWidth) + "px, " + randomY + "px, 0)"
+    transform: "translate3d(" + (winWidth + 0.3 * objWidth) + "px, " + randomY + "px, 0) " + scale
   }, {
-    transform: "translate3d(" + randomX + "px, " + (winHeight + 0.3 * objHeight) + "px, 0)"
+    transform: "translate3d(" + randomX + "px, " + (winHeight + 0.3 * objHeight) + "px, 0) " + scale
   }, {
-    transform: "translate3d(" + -1.3 * objWidth + "px, " + randomY + "px, 0)"
+    transform: "translate3d(" + -1.3 * objWidth + "px, " + randomY + "px, 0) " + scale
   }];
   return sidePosition[randomSide];
 };
@@ -184,20 +184,21 @@ function () {
   function AnimateElementToVector(_a) {
     var obj = _a.obj,
         objContainer = _a.objContainer,
+        scale = _a.scale,
         speed = _a.speed;
+    this.animationFrameRequest = undefined;
     this.currentPosition = {
       x: 0,
       y: 0
     };
-    this.isRunning = false;
     this.obj = obj;
     this.objContainer = objContainer;
-    this.pixelsPerSecond = speed; // Make sure our object has the right css set
+    this.pixelsPerSecond = speed;
+    this.scale = scale; // Make sure our object has the right css set
 
     this.styleInitial();
   } // TODO: Add pauses randomly on the way to new position
   // TODO: Add 'jerky' randomness
-  // TODO: stop() doesnt stop
 
 
   AnimateElementToVector.prototype.calcDelta = function (a, b) {
@@ -239,6 +240,11 @@ function () {
     return this.calcRandomVector(totalWidth, totalHeight);
   };
 
+  AnimateElementToVector.prototype.getCurrentTransformProperty = function () {
+    var computedStyle = window.getComputedStyle(this.objContainer);
+    return computedStyle.getPropertyValue('transform');
+  };
+
   AnimateElementToVector.prototype.getSpeed = function (nextPos) {
     var delta = this.calcDelta(this.currentPosition, nextPos);
     return this.calcSpeed(delta);
@@ -261,17 +267,24 @@ function () {
   };
 
   AnimateElementToVector.prototype.start = function () {
-    if (this.isRunning) return;
-    this.isRunning = true; // Create animation loop
-
+    // Create animation loop
     this.objContainer.addEventListener('transitionend', this.moveElement.bind(this));
-    requestAnimationFrame(this.moveElement.bind(this));
+
+    if (!this.animationFrameRequest) {
+      this.animationFrameRequest = requestAnimationFrame(this.moveElement.bind(this));
+    }
   };
 
   AnimateElementToVector.prototype.stop = function () {
-    if (!this.isRunning) return;
-    this.isRunning = false; // Remove animation loop
+    // Freeze the transition in place by locking in the current x any y values
+    // of the transform
+    this.styleTransform(); // Remove animation loop
 
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+
+    this.animationFrameRequest = undefined;
     this.objContainer.removeEventListener('transitionend', this.moveElement.bind(this));
   };
 
@@ -288,12 +301,19 @@ function () {
   AnimateElementToVector.prototype.styleMovement = function (speed, nextPos) {
     Object.assign(this.objContainer.style, {
       transition: "transform " + speed + "s linear",
-      transform: "translate3d(" + nextPos.x + "px, " + nextPos.y + "px, 0)"
+      transform: "translate3d(" + nextPos.x + "px, " + nextPos.y + "px, 0) " + this.scale
     });
   };
 
   AnimateElementToVector.prototype.styleRotation = function (angle) {
     this.obj.style.transform = "rotate(" + angle + "deg)";
+  };
+
+  AnimateElementToVector.prototype.styleTransform = function () {
+    Object.assign(this.objContainer.style, {
+      transitionProperty: 'none',
+      transform: this.getCurrentTransformProperty()
+    });
   };
 
   return AnimateElementToVector;
@@ -409,43 +429,42 @@ function () {
         objSpeed = _a.objSpeed,
         objContainerSpeed = _a.objContainerSpeed,
         frames = _a.frames,
+        scale = _a.scale,
         width = _a.width;
     this.obj = obj;
     this.objContainer = objContainer;
     this.objSpeed = objSpeed;
     this.objContainerSpeed = objContainerSpeed;
     this.frames = frames;
+    this.scale = scale;
     this.width = width;
-  }
-
-  WalkAndMove.prototype.init = function () {
-    var _this = this; // start walk cycle
-
-
     this.walk = new AnimateSpriteFrames_1.default({
       frames: this.frames,
       obj: this.obj,
       speed: this.objSpeed,
       width: this.width
     });
+    this.move = new AnimateElementToVector_1.default({
+      obj: this.obj,
+      objContainer: this.objContainer,
+      scale: this.scale,
+      speed: this.objContainerSpeed
+    });
+  }
+
+  WalkAndMove.prototype.start = function () {
+    var _this = this;
+
     this.walk.start(); // move around screen
 
     setTimeout(function () {
-      _this.move = new AnimateElementToVector_1.default({
-        obj: _this.obj,
-        objContainer: _this.objContainer,
-        speed: _this.objContainerSpeed
-      });
-
       _this.move.start();
     }, 1000);
   };
 
   WalkAndMove.prototype.stop = function () {
-    var _a, _b;
-
-    (_a = this.walk) === null || _a === void 0 ? void 0 : _a.stop();
-    (_b = this.move) === null || _b === void 0 ? void 0 : _b.stop();
+    this.walk.stop();
+    this.move.stop();
   };
 
   return WalkAndMove;
@@ -514,37 +533,38 @@ function () {
     this.isAlive = false;
     this.maxSpeed = maxSpeed;
     this.minSpeed = minSpeed;
+    this.scale = "scale(" + (Math.random() + 0.2) + ")";
     this.sprite = sprite;
     this.walkSpeed = walkSpeed;
     this.width = width;
-  } // TODO: add random scale size
-  // TODO: add deaths if clicked
-  // TODO: pick a new path if moused over
+    this.move = new WalkAndMove_1.default({
+      frames: this.frames,
+      obj: this.bug,
+      objContainer: this.bugContainer,
+      objSpeed: this.walkSpeed,
+      objContainerSpeed: 60,
+      scale: this.scale,
+      width: this.width
+    });
+  } // TODO: add deaths if clicked
   // TODO: crawling bugs should burrow out from the screen
 
 
   Bug.prototype.init = function () {
     this.create();
-    this.move();
+    this.startMove();
   };
 
   Bug.prototype.create = function () {
     this.assignBugClassName();
     this.createBugImage();
     this.createBugStyles();
+    this.createEventListeners();
     this.appendBugToDOM();
   };
 
-  Bug.prototype.move = function () {
-    var move = new WalkAndMove_1.default({
-      frames: this.frames,
-      obj: this.bug,
-      objContainer: this.bugContainer,
-      objSpeed: this.walkSpeed,
-      objContainerSpeed: 60,
-      width: this.width
-    });
-    move.init();
+  Bug.prototype.startMove = function () {
+    this.move.start();
   };
 
   Bug.prototype.appendBugToDOM = function () {
@@ -574,7 +594,18 @@ function () {
       transition: 'transform 15s linear',
       width: this.width + "px",
       zIndex: '9999999'
-    }, util_1.getStartingPosition(this.height, this.width)));
+    }, util_1.getStartingPosition(this.height, this.width, this.scale)));
+  };
+
+  Bug.prototype.createEventListeners = function () {
+    var _this = this;
+
+    this.bugContainer.addEventListener('mouseout', function () {
+      _this.move.start();
+    });
+    this.bugContainer.addEventListener('mouseover', function () {
+      _this.move.stop();
+    });
   };
 
   return Bug;
@@ -689,7 +720,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62470" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63216" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

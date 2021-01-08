@@ -7,8 +7,9 @@ class WalkAndMove {
   private objSpeed: number;
   private objContainerSpeed: number;
   private frames: number;
-  private move?: InstanceType<typeof AnimateElementToVector>;
-  private walk?: InstanceType<typeof AnimateSpriteFrames>;
+  private move: InstanceType<typeof AnimateElementToVector>;
+  private scale: string;
+  private walk: InstanceType<typeof AnimateSpriteFrames>;
   private width: number;
 
   constructor({
@@ -17,6 +18,7 @@ class WalkAndMove {
     objSpeed,
     objContainerSpeed,
     frames,
+    scale,
     width,
   }: {
     obj: HTMLElement;
@@ -24,6 +26,7 @@ class WalkAndMove {
     objSpeed: number;
     objContainerSpeed: number;
     frames: number;
+    scale: string;
     width: number;
   }) {
     this.obj = obj;
@@ -31,33 +34,36 @@ class WalkAndMove {
     this.objSpeed = objSpeed;
     this.objContainerSpeed = objContainerSpeed;
     this.frames = frames;
+    this.scale = scale;
     this.width = width;
-  }
 
-  init() {
-    // start walk cycle
     this.walk = new AnimateSpriteFrames({
       frames: this.frames,
       obj: this.obj,
       speed: this.objSpeed,
       width: this.width,
     });
+
+    this.move = new AnimateElementToVector({
+      obj: this.obj,
+      objContainer: this.objContainer,
+      scale: this.scale,
+      speed: this.objContainerSpeed,
+    });
+  }
+
+  start() {
     this.walk.start();
 
     // move around screen
     setTimeout(() => {
-      this.move = new AnimateElementToVector({
-        obj: this.obj,
-        objContainer: this.objContainer,
-        speed: this.objContainerSpeed,
-      });
       this.move.start();
     }, 1000);
   }
 
   stop() {
-    this.walk?.stop();
-    this.move?.stop();
+    this.walk.stop();
+    this.move.stop();
   }
 }
 
