@@ -12,6 +12,8 @@ class Bug {
   isAlive: boolean;
   maxSpeed: number;
   minSpeed: number;
+  move: InstanceType<typeof WalkAndMove>;
+  scale: string;
   sprite: string;
   walkSpeed: number;
   width: number;
@@ -34,39 +36,40 @@ class Bug {
     this.isAlive = false;
     this.maxSpeed = maxSpeed;
     this.minSpeed = minSpeed;
+    this.scale = `scale(${Math.random() + 0.2})`;
     this.sprite = sprite;
     this.walkSpeed = walkSpeed;
     this.width = width;
+
+    this.move = new WalkAndMove({
+      frames: this.frames,
+      obj: this.bug,
+      objContainer: this.bugContainer,
+      objSpeed: this.walkSpeed,
+      objContainerSpeed: 60,
+      scale: this.scale,
+      width: this.width,
+    });
   }
 
-  // TODO: add random scale size
   // TODO: add deaths if clicked
-  // TODO: pick a new path if moused over
   // TODO: crawling bugs should burrow out from the screen
 
   init() {
     this.create();
-    this.move();
+    this.startMove();
   }
 
   private create() {
     this.assignBugClassName();
     this.createBugImage();
     this.createBugStyles();
+    this.createEventListeners();
     this.appendBugToDOM();
   }
 
-  move() {
-    const move = new WalkAndMove({
-      frames: this.frames,
-      obj: this.bug,
-      objContainer: this.bugContainer,
-      objSpeed: this.walkSpeed,
-      objContainerSpeed: 60,
-      width: this.width,
-    });
-
-    move.init();
+  startMove() {
+    this.move.start();
   }
 
   private appendBugToDOM() {
@@ -97,7 +100,17 @@ class Bug {
       transition: 'transform 15s linear',
       width: `${this.width}px`,
       zIndex: '9999999',
-      ...getStartingPosition(this.height, this.width),
+      ...getStartingPosition(this.height, this.width, this.scale),
+    });
+  }
+
+  createEventListeners() {
+    this.bugContainer.addEventListener('mouseout', () => {
+      this.move.start();
+    });
+
+    this.bugContainer.addEventListener('mouseover', () => {
+      this.move.stop();
     });
   }
 }

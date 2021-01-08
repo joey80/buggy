@@ -6,26 +6,30 @@ interface Vector {
 }
 
 class AnimateElementToVector {
+  private animationFrameRequest?: number;
   private currentPosition: Vector;
-  private isRunning: boolean;
   private obj: HTMLElement;
   private objContainer: HTMLElement;
   private pixelsPerSecond: number;
+  private scale: string;
 
   constructor({
     obj,
     objContainer,
+    scale,
     speed,
   }: {
     obj: HTMLElement;
     objContainer: HTMLElement;
+    scale: string;
     speed: number;
   }) {
+    this.animationFrameRequest = undefined;
     this.currentPosition = { x: 0, y: 0 };
-    this.isRunning = false;
     this.obj = obj;
     this.objContainer = objContainer;
     this.pixelsPerSecond = speed;
+    this.scale = scale;
 
     // Make sure our object has the right css set
     this.styleInitial();
@@ -33,7 +37,6 @@ class AnimateElementToVector {
 
   // TODO: Add pauses randomly on the way to new position
   // TODO: Add 'jerky' randomness
-  // TODO: stop() doesnt stop
 
   private calcDelta(a: Vector, b: Vector) {
     const dx = a.x - b.x;
@@ -67,6 +70,11 @@ class AnimateElementToVector {
     return this.calcRandomVector(totalWidth, totalHeight);
   }
 
+  private getCurrentTransformProperty() {
+    const computedStyle = window.getComputedStyle(this.objContainer);
+    return computedStyle.getPropertyValue('transform');
+  }
+
   private getSpeed(nextPos: Vector) {
     const delta = this.calcDelta(this.currentPosition, nextPos);
     return this.calcSpeed(delta);
@@ -91,19 +99,23 @@ class AnimateElementToVector {
   }
 
   start() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-
     // Create animation loop
     this.objContainer.addEventListener('transitionend', this.moveElement.bind(this));
-    requestAnimationFrame(this.moveElement.bind(this));
+    if (!this.animationFrameRequest) {
+      this.animationFrameRequest = requestAnimationFrame(this.moveElement.bind(this));
+    }
   }
 
   stop() {
-    if (!this.isRunning) return;
-    this.isRunning = false;
+    // Freeze the transition in place by locking in the current x any y values
+    // of the transform
+    this.styleTransform();
 
     // Remove animation loop
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+    this.animationFrameRequest = undefined;
     this.objContainer.removeEventListener('transitionend', this.moveElement.bind(this));
   }
 
@@ -121,12 +133,19 @@ class AnimateElementToVector {
   private styleMovement(speed: number, nextPos: Vector) {
     Object.assign(this.objContainer.style, {
       transition: `transform ${speed}s linear`,
-      transform: `translate3d(${nextPos.x}px, ${nextPos.y}px, 0)`,
+      transform: `translate3d(${nextPos.x}px, ${nextPos.y}px, 0) ${this.scale}`,
     });
   }
 
   private styleRotation(angle: number) {
     this.obj.style.transform = `rotate(${angle}deg)`;
+  }
+
+  private styleTransform() {
+    Object.assign(this.objContainer.style, {
+      transitionProperty: 'none',
+      transform: this.getCurrentTransformProperty(),
+    });
   }
 }
 
