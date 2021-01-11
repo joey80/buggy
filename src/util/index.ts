@@ -26,4 +26,4 @@ const getStartingPosition = (objHeight: number, objWidth: number, scale: string)
   return sidePosition[randomSide];
 };
 
-export { calcWindowSize, getStartingPosition };
+export { calcWindowSize, getStartingPosition, randomIntFromInterval };

@@ -1,6 +1,6 @@
 import images from '../images/*.png';
 import WalkAndMove from './WalkAndMove';
-import { getStartingPosition } from '../util';
+import { getStartingPosition, randomIntFromInterval } from '../util';
 
 class Bug {
   bug: HTMLImageElement;
@@ -8,7 +8,6 @@ class Bug {
   direction: Array<string>;
   frames: number;
   height: number;
-  isActive: boolean;
   isAlive: boolean;
   maxSpeed: number;
   minSpeed: number;
@@ -32,11 +31,10 @@ class Bug {
     this.direction = [];
     this.frames = frames;
     this.height = height;
-    this.isActive = false;
-    this.isAlive = false;
+    this.isAlive = true;
     this.maxSpeed = maxSpeed;
     this.minSpeed = minSpeed;
-    this.scale = `scale(${Math.random() + 0.2})`;
+    this.scale = this.calculateScale();
     this.sprite = sprite;
     this.walkSpeed = walkSpeed;
     this.width = width;
@@ -52,12 +50,11 @@ class Bug {
     });
   }
 
-  // TODO: add deaths if clicked
-  // TODO: crawling bugs should burrow out from the screen
+  // TODO: death should show guts where it was clicked
 
   init() {
     this.create();
-    this.startMove();
+    this.move.start();
   }
 
   private create() {
@@ -68,8 +65,10 @@ class Bug {
     this.appendBugToDOM();
   }
 
-  startMove() {
-    this.move.start();
+  die() {
+    this.isAlive = false;
+    this.move.stop();
+    this.styleDeath();
   }
 
   private appendBugToDOM() {
@@ -77,8 +76,14 @@ class Bug {
     document.body.appendChild(this.bugContainer);
   }
 
-  assignBugClassName(name?: string) {
-    this.bug.className = name || 'bug';
+  assignBugClassName() {
+    this.bug.className = 'bug';
+  }
+
+  calculateScale() {
+    const num = randomIntFromInterval(7, 10);
+    if (num === 10) return 'scale(1)';
+    return `scale(0.${num})`;
   }
 
   private createBugImage() {
@@ -105,13 +110,29 @@ class Bug {
   }
 
   createEventListeners() {
-    this.bugContainer.addEventListener('mouseout', () => {
-      this.move.start();
-    });
+    const start = () => {
+      if (this.isAlive) {
+        setTimeout(() => {
+          if (this.isAlive) {
+            this.move.start();
+          }
+        }, 1000);
+      }
+    };
+    const stop = () => this.move.stop();
 
-    this.bugContainer.addEventListener('mouseover', () => {
-      this.move.stop();
+    this.bugContainer.addEventListener('mouseout', start);
+    this.bugContainer.addEventListener('mouseover', stop);
+
+    this.bugContainer.addEventListener('click', () => {
+      this.bugContainer.removeEventListener('mouseout', start);
+      this.bugContainer.removeEventListener('mouseover', stop);
+      this.die();
     });
+  }
+
+  styleDeath() {
+    this.bug.style.objectPosition = '';
   }
 }
 

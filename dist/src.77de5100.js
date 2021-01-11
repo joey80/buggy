@@ -132,7 +132,7 @@ module.exports = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getStartingPosition = exports.calcWindowSize = void 0;
+exports.randomIntFromInterval = exports.getStartingPosition = exports.calcWindowSize = void 0;
 
 var calcWindowSize = function calcWindowSize() {
   return {
@@ -146,6 +146,8 @@ exports.calcWindowSize = calcWindowSize;
 var randomIntFromInterval = function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 };
+
+exports.randomIntFromInterval = randomIntFromInterval;
 
 var getStartingPosition = function getStartingPosition(objHeight, objWidth, scale) {
   var _a = calcWindowSize(),
@@ -529,11 +531,10 @@ function () {
     this.direction = [];
     this.frames = frames;
     this.height = height;
-    this.isActive = false;
-    this.isAlive = false;
+    this.isAlive = true;
     this.maxSpeed = maxSpeed;
     this.minSpeed = minSpeed;
-    this.scale = "scale(" + (Math.random() + 0.2) + ")";
+    this.scale = this.calculateScale();
     this.sprite = sprite;
     this.walkSpeed = walkSpeed;
     this.width = width;
@@ -546,13 +547,12 @@ function () {
       scale: this.scale,
       width: this.width
     });
-  } // TODO: add deaths if clicked
-  // TODO: crawling bugs should burrow out from the screen
+  } // TODO: death should show guts where it was clicked
 
 
   Bug.prototype.init = function () {
     this.create();
-    this.startMove();
+    this.move.start();
   };
 
   Bug.prototype.create = function () {
@@ -563,8 +563,10 @@ function () {
     this.appendBugToDOM();
   };
 
-  Bug.prototype.startMove = function () {
-    this.move.start();
+  Bug.prototype.die = function () {
+    this.isAlive = false;
+    this.move.stop();
+    this.styleDeath();
   };
 
   Bug.prototype.appendBugToDOM = function () {
@@ -572,8 +574,14 @@ function () {
     document.body.appendChild(this.bugContainer);
   };
 
-  Bug.prototype.assignBugClassName = function (name) {
-    this.bug.className = name || 'bug';
+  Bug.prototype.assignBugClassName = function () {
+    this.bug.className = 'bug';
+  };
+
+  Bug.prototype.calculateScale = function () {
+    var num = util_1.randomIntFromInterval(7, 10);
+    if (num === 10) return 'scale(1)';
+    return "scale(0." + num + ")";
   };
 
   Bug.prototype.createBugImage = function () {
@@ -600,12 +608,33 @@ function () {
   Bug.prototype.createEventListeners = function () {
     var _this = this;
 
-    this.bugContainer.addEventListener('mouseout', function () {
-      _this.move.start();
+    var start = function start() {
+      if (_this.isAlive) {
+        setTimeout(function () {
+          if (_this.isAlive) {
+            _this.move.start();
+          }
+        }, 1000);
+      }
+    };
+
+    var stop = function stop() {
+      return _this.move.stop();
+    };
+
+    this.bugContainer.addEventListener('mouseout', start);
+    this.bugContainer.addEventListener('mouseover', stop);
+    this.bugContainer.addEventListener('click', function () {
+      _this.bugContainer.removeEventListener('mouseout', start);
+
+      _this.bugContainer.removeEventListener('mouseover', stop);
+
+      _this.die();
     });
-    this.bugContainer.addEventListener('mouseover', function () {
-      _this.move.stop();
-    });
+  };
+
+  Bug.prototype.styleDeath = function () {
+    this.bug.style.objectPosition = '';
   };
 
   return Bug;
@@ -668,7 +697,11 @@ function (_super) {
   }
 
   Spider.prototype.assignBugClassName = function () {
-    _super.prototype.assignBugClassName.call(this, 'spider');
+    this.bug.className = 'spider';
+  };
+
+  Spider.prototype.styleDeath = function () {
+    this.bug.style.objectPosition = "-" + 2 * this.width + "px 100%";
   };
 
   return Spider;
@@ -720,7 +753,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63216" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64615" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
