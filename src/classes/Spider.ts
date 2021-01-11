@@ -6,7 +6,11 @@ class Spider extends Bug {
   }
 
   assignBugClassName() {
-    super.assignBugClassName('spider');
+    this.bug.className = 'spider';
+  }
+
+  styleDeath() {
+    this.bug.style.objectPosition = `-${2 * this.width}px 100%`;
   }
 }
 
